@@ -133,6 +133,19 @@ export default function InvoicesPage() {
                           const full = data.invoices.find(x => x.id === i.id);
                           if (full) downloadBlob(generateInvoicePDF(full), `${full.number}.pdf`);
                         }} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"><Download className="w-4 h-4" /></button>
+                        {!i.einvoice?.ooboUid && (
+                          <button title="Submit to OOBO / DGI (Madagascar e-invoice)" onClick={() => {
+                            db.submitOobo(i.id);
+                            setData(db.getAll());
+                          }} className="p-1.5 rounded hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-600 dark:text-violet-400" aria-label="Submit OOBO">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v8"/><path d="m16 6-4-4-4 4"/><rect width="20" height="8" x="2" y="14" rx="2"/></svg>
+                          </button>
+                        )}
+                        {i.einvoice?.ooboUid && (
+                          <span title={`OOBO UID: ${i.einvoice.ooboUid}`} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                            ✓ OOBO
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>

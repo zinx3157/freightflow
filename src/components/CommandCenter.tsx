@@ -31,6 +31,7 @@ import {
   Smartphone,
   Grid3x3,
   Sparkles,
+  FileCheck2,
 } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 
@@ -84,6 +85,7 @@ export function CommandPalette({
       { id: 'nav-warehouse', label: 'Go to Warehouse (WMS)', icon: <Warehouse className="w-4 h-4" />, section: 'Navigation', keywords: 'wms cfs whr receipt cargo stuff strip', run: () => router.push('/warehouse') },
       { id: 'nav-driver', label: 'Open Driver POD App', icon: <Smartphone className="w-4 h-4" />, section: 'Navigation', keywords: 'driver mobile pod proof delivery signature', run: () => router.push('/driver') },
       { id: 'nav-yard', label: 'Go to Container Yard', icon: <Grid3x3 className="w-4 h-4" />, section: 'Navigation', keywords: 'yard slots dwell gate moves terminal toamasina', run: () => router.push('/yard') },
+      { id: 'nav-approvals', label: 'Go to Document Approvals', icon: <FileCheck2 className="w-4 h-4" />, section: 'Navigation', keywords: 'approvals sign off chain workflow license expiry', run: () => router.push('/approvals') },
       { id: 'nav-rates-shopper', label: 'AI Spot Rate Shopper', icon: <Sparkles className="w-4 h-4" />, section: 'Navigation', keywords: 'spot quote rates shop carrier compare', run: () => router.push('/rates') },
       { id: 'nav-benchmark', label: 'FreightFlow vs CargoWise', icon: <Award className="w-4 h-4" />, section: 'Navigation', keywords: 'compare cargowise benchmark', run: () => router.push('/benchmark') },
       { id: 'nav-quote-form', label: 'Open public quote form', icon: <ExternalLink className="w-4 h-4" />, section: 'Navigation', keywords: 'public customer quote form', run: () => window.open('/get-quote', '_blank') },
@@ -262,11 +264,17 @@ export function CommandPalette({
 export function NotificationsMenu({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [data, setData] = useState<any>(null);
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
+  const refresh = () => setData(db.getAll());
+
+  useEffect(() => { if (open) refresh(); }, [open]);
   useEffect(() => {
-    if (open) {
-      setData(db.getAll());
-    }
+    function onChange() { if (open) refresh(); }
+    window.addEventListener('ff:data-changed', onChange);
+    window.addEventListener('storage', onChange);
+    const iv = setInterval(refresh, 15000);
+    return () => { window.removeEventListener('ff:data-changed', onChange); window.removeEventListener('storage', onChange); clearInterval(iv); };
   }, [open]);
 
   useEffect(() => {
@@ -279,60 +287,104 @@ export function NotificationsMenu({ open, onClose }: { open: boolean; onClose: (
 
   if (!open || !data) return null;
 
-  const unread = data.activities.slice(0, 12);
-  const issues = data.shipments.filter((s: any) => {
+  const issues = (data.shipments || []).filter((s: any) => {
     const overdue = s.status !== 'delivered' && new Date(s.eta) < new Date();
     return overdue || s.customsStatus === 'rejected' || s.customsStatus === 'inspection';
   });
+  const notifs = (data.notifications || []).slice(0, 40);
+  const unreadCount = (data.notifications || []).filter((n: any) => !n.read).length;
+
+  const kindIcon: Record<string, string> = {
+    shipment: '📦', trucking: '🚛', customs: '🛃', pod: '✅', warehouse: '🏭', yard: '🧱',
+    invoice: '🧾', quote: '💰', email: '✉️', doc: '📄', approval: '✔', ai: '✨', system: '⚙️',
+  };
+  const kindColor: Record<string, string> = {
+    shipment: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300',
+    trucking: 'bg-sky-100 text-sky-700 dark:bg-sky-900/50 dark:text-sky-300',
+    customs: 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300',
+    pod: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300',
+    yard: 'bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-300',
+    invoice: 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300',
+    approval: 'bg-violet-100 text-violet-700 dark:bg-violet-900/50 dark:text-violet-300',
+    ai: 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/50 dark:text-fuchsia-300',
+    email: 'bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300',
+    system: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+    warehouse: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-300',
+    quote: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-300',
+    doc: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+  };
+
+  const openItem = (n: any) => {
+    if (n.href) { router.push(n.href); onClose(); }
+    db.markNotifRead(n.id);
+    refresh();
+  };
+  const markAll = () => { db.markAllNotifRead(); refresh(); };
 
   return (
     <>
       <div className="fixed inset-0 z-40" onClick={onClose} />
       <div
         ref={ref}
-        className="fixed right-4 top-16 z-50 w-[380px] max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
+        className="fixed right-4 top-16 z-50 w-[400px] max-w-[calc(100vw-2rem)] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden"
       >
         <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
           <div>
             <div className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Bell className="w-4 h-4" /> Notifications
+              {unreadCount > 0 && (
+                <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-rose-500 text-white text-[10px] font-bold">{unreadCount}</span>
+              )}
             </div>
             <div className="text-xs text-slate-500">{issues.length} shipments need attention</div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">×</button>
+          <div className="flex items-center gap-1">
+            <button onClick={markAll} className="text-[11px] px-2 py-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300">
+              Mark all read
+            </button>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 w-8 h-8 flex items-center justify-center rounded-md hover:bg-slate-100 dark:hover:bg-slate-800">×</button>
+          </div>
         </div>
-        <div className="max-h-[60vh] overflow-y-auto">
+        <div className="max-h-[65vh] overflow-y-auto">
           {issues.length > 0 && (
             <div className="p-2">
               <div className="text-[10px] uppercase tracking-wider font-bold text-rose-600 px-2 py-1">⚠ Action Required</div>
               {issues.slice(0, 4).map((s: any) => (
-                <div key={s.id} className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20 cursor-pointer">
+                <button key={s.id} onClick={() => { router.push(`/shipments/?id=${s.id}`); onClose(); }}
+                  className="w-full text-left p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/20">
                   <div className="flex items-start gap-2">
                     <span className="w-2 h-2 rounded-full bg-rose-500 mt-1.5 shrink-0 animate-pulse" />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-sm text-slate-900 dark:text-white">{s.reference}</div>
                       <div className="text-xs text-slate-500 truncate">
-                        {s.customsStatus === 'rejected'
-                          ? 'Customs rejected — immediate action'
-                          : s.customsStatus === 'inspection'
-                          ? 'Customs inspection in progress'
+                        {s.customsStatus === 'rejected' ? 'Customs rejected — immediate action'
+                          : s.customsStatus === 'inspection' ? 'Customs inspection in progress'
                           : `ETA passed (${s.eta}) — verify status`}
                       </div>
                     </div>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
           <div className="p-2 border-t border-slate-100 dark:border-slate-800">
-            <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 px-2 py-1">Recent Activity</div>
-            {unread.map((a: any) => (
-              <div key={a.id} className="p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                <div className="text-sm text-slate-700 dark:text-slate-200">{a.message}</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">
-                  {new Date(a.timestamp).toLocaleString()} · {a.reference}
+            <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 px-2 py-1">All Notifications</div>
+            {notifs.length === 0 && (
+              <div className="p-6 text-center text-sm text-slate-400">No notifications yet</div>
+            )}
+            {notifs.map((n: any) => (
+              <button key={n.id} onClick={() => openItem(n)}
+                className={`w-full text-left p-2 rounded-lg transition-colors flex gap-2 items-start ${n.read ? 'hover:bg-slate-50 dark:hover:bg-slate-800/50' : 'bg-brand/5 dark:bg-brand/10 hover:bg-brand/10'}`}>
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0 ${kindColor[n.kind] || kindColor.system}`}>{kindIcon[n.kind] || '•'}</div>
+                <div className="flex-1 min-w-0 text-left">
+                  <div className={`text-sm leading-snug ${n.read ? 'text-slate-600 dark:text-slate-300' : 'font-semibold text-slate-900 dark:text-white'}`}>{n.title}</div>
+                  {n.body && <div className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{n.body}</div>}
+                  <div className="text-[10px] text-slate-400 mt-0.5">
+                    {new Date(n.at).toLocaleString()}
+                  </div>
                 </div>
-              </div>
+                {!n.read && <span className="w-2 h-2 rounded-full bg-brand mt-2 shrink-0" />}
+              </button>
             ))}
           </div>
         </div>

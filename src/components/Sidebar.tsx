@@ -23,6 +23,7 @@ import {
   Warehouse,
   Smartphone,
   Grid3x3,
+  FileCheck2,
 } from 'lucide-react';
 import { useAuth, roleLabel } from './AuthProvider';
 
@@ -46,6 +47,7 @@ const ALL_NAV: NavItem[] = [
   { href: '/reports', label: 'Reports', icon: BarChart3, perm: 'viewReports' },
   { href: '/tracking', label: 'Track & Trace', icon: Search },
   { href: '/emails', label: 'Email Center', icon: Mail, badge: 'NEW', perm: 'sendEmails' },
+  { href: '/approvals', label: 'Approvals', icon: FileCheck2, badge: 'B8', perm: 'viewApprovals' },
   { href: '/benchmark', label: 'CW Benchmark', icon: Award, badge: 'NEW', perm: 'viewBenchmark' },
 ];
 
@@ -134,9 +136,9 @@ export default function Sidebar() {
 
 // Mirror of PERMISSIONS keys to avoid circular import weight; kept in sync
 const PERMS = {
-  admin: { viewDashboard: true, viewMap: true, viewShipments: true, viewAir: true, viewSea: true, viewCustoms: true, viewTrucking: true, viewCustomers: true, viewQuotes: true, viewInvoices: true, viewReports: true, viewBenchmark: true, sendEmails: true, viewWarehouse: true, viewDriverApp: true },
-  operations: { viewDashboard: true, viewMap: true, viewShipments: true, viewAir: true, viewSea: true, viewCustoms: true, viewTrucking: true, viewCustomers: true, viewQuotes: true, viewInvoices: true, viewReports: true, viewBenchmark: true, sendEmails: true, viewWarehouse: true, viewDriverApp: true },
-  sales: { viewDashboard: true, viewShipments: true, viewAir: true, viewSea: true, viewCustomers: true, viewQuotes: true, viewInvoices: true, viewReports: true, viewBenchmark: true, sendEmails: true, viewWarehouse: false, viewDriverApp: false },
-  customs: { viewDashboard: true, viewShipments: true, viewAir: true, viewSea: true, viewCustoms: true, viewCustomers: true, viewWarehouse: true, viewDriverApp: false },
-  driver: { viewTrucking: true, viewDriverApp: true, viewWarehouse: false },
+  admin: { viewDashboard: true, viewMap: true, viewShipments: true, viewAir: true, viewSea: true, viewCustoms: true, viewTrucking: true, viewCustomers: true, viewQuotes: true, viewInvoices: true, viewReports: true, viewBenchmark: true, sendEmails: true, viewWarehouse: true, viewDriverApp: true, viewApprovals: true },
+  operations: { viewDashboard: true, viewMap: true, viewShipments: true, viewAir: true, viewSea: true, viewCustoms: true, viewTrucking: true, viewCustomers: true, viewQuotes: true, viewInvoices: true, viewReports: true, viewBenchmark: true, sendEmails: true, viewWarehouse: true, viewDriverApp: true, viewApprovals: true },
+  sales: { viewDashboard: true, viewShipments: true, viewAir: true, viewSea: true, viewCustomers: true, viewQuotes: true, viewInvoices: true, viewReports: true, viewBenchmark: true, sendEmails: true, viewWarehouse: false, viewDriverApp: false, viewApprovals: true },
+  customs: { viewDashboard: true, viewShipments: true, viewAir: true, viewSea: true, viewCustoms: true, viewCustomers: true, viewWarehouse: true, viewDriverApp: false, viewApprovals: true },
+  driver: { viewTrucking: true, viewDriverApp: true, viewWarehouse: false, viewApprovals: false },
 };

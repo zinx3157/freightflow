@@ -27,6 +27,7 @@ const PAGE_META: Record<string, { title: string; subtitle?: string; newHref?: st
   '/emails': { title: 'Email Center', subtitle: 'Two-way inbox · automated customer communications' },
   '/rates': { title: 'Rate Cards', subtitle: 'Buy/sell rates across all lanes and carriers' },
   '/warehouse': { title: 'Warehouse (WMS)', subtitle: 'CFS, inbound/outbound, receipts & cargo items' },
+  '/approvals': { title: 'Document Approvals', subtitle: 'Approval chains, sign-offs, license expiry alerts' },
   '/driver': { title: 'Driver POD App', subtitle: 'Mobile-first proof-of-delivery capture' },
   '/get-quote': { title: 'Request a Quote', subtitle: 'Public quote form' },
   '/portal': { title: 'Customer Portal', subtitle: 'Live tracking for your clients' },
@@ -98,19 +99,17 @@ export default function Topbar() {
 
   const refresh = () => {
     try {
-      const d = db.getAll();
-      const n = d.shipments.filter((s: any) => {
-        const overdue = s.status !== 'delivered' && new Date(s.eta) < new Date();
-        return overdue || s.customsStatus === 'rejected' || s.customsStatus === 'inspection';
-      }).length;
-      setIssueCount(n);
+      setIssueCount(db.unreadNotifCount());
     } catch {}
   };
 
   useEffect(() => {
     refresh();
-    const iv = setInterval(refresh, 30000);
-    return () => clearInterval(iv);
+    const iv = setInterval(refresh, 5000);
+    const onChange = () => refresh();
+    window.addEventListener('ff:data-changed', onChange);
+    window.addEventListener('storage', onChange);
+    return () => { clearInterval(iv); window.removeEventListener('ff:data-changed', onChange); window.removeEventListener('storage', onChange); };
   }, [pathname]);
 
   useEffect(() => {

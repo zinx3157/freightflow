@@ -72,6 +72,15 @@ const en: Dict = {
     estimatedDelivery: 'Estimated Delivery', lastUpdate: 'Last Update', documents: 'Documents',
     uploadDoc: 'Upload Document', shipmentHistory: 'Shipment History',
   },
+  // Batch 8
+  batch8: {
+    approvals: 'Approvals', yard: 'Container Yard', exportCsv: 'Export CSV', oobo: 'Submit to OOBO',
+    convertQuote: 'Convert to Shipment', installApp: 'Install App', offlineReady: 'Offline ready',
+    notifications: 'Notifications', markAllRead: 'Mark all read', awaitingReview: 'Awaiting your review',
+    installPwa: 'Install as App', pwaDesc: 'Add to Home Screen for full-screen app experience',
+    csvShipments: 'Shipments (.csv)', csvInvoices: 'Invoices (.csv)', csvQuotes: 'Quotes (.csv)',
+    csvYard: 'Yard inventory + moves (.csv)',
+  },
 };
 
 const fr: Dict = {

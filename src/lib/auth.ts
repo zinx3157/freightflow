@@ -96,6 +96,7 @@ export const PERMISSIONS: Record<UserRole, {
   generateDocs: boolean;
   viewWarehouse: boolean;
   viewDriverApp: boolean;
+  viewApprovals: boolean;
 }> = {
   admin: {
     viewDashboard: true, viewShipments: true, createShipment: true, editShipment: true, deleteShipment: true,
@@ -103,7 +104,7 @@ export const PERMISSIONS: Record<UserRole, {
     viewTrucking: true, editTrucking: true, viewCustomers: true, editCustomers: true,
     viewQuotes: true, createQuote: true, convertQuote: true, viewInvoices: true, createInvoice: true,
     markInvoicePaid: true, viewReports: true, viewMap: true, viewBenchmark: true,
-    sendEmails: true, manageUsers: true, classifyHs: true, generateDocs: true, viewWarehouse: true, viewDriverApp: true,
+    sendEmails: true, manageUsers: true, classifyHs: true, generateDocs: true, viewWarehouse: true, viewDriverApp: true, viewApprovals: true,
   },
   operations: {
     viewDashboard: true, viewShipments: true, createShipment: true, editShipment: true, deleteShipment: false,
@@ -111,7 +112,7 @@ export const PERMISSIONS: Record<UserRole, {
     viewTrucking: true, editTrucking: true, viewCustomers: true, editCustomers: false,
     viewQuotes: true, createQuote: false, convertQuote: true, viewInvoices: true, createInvoice: true,
     markInvoicePaid: false, viewReports: true, viewMap: true, viewBenchmark: true,
-    sendEmails: true, manageUsers: false, classifyHs: true, generateDocs: true, viewWarehouse: true, viewDriverApp: true,
+    sendEmails: true, manageUsers: false, classifyHs: true, generateDocs: true, viewWarehouse: true, viewDriverApp: true, viewApprovals: true,
   },
   sales: {
     viewDashboard: true, viewShipments: true, createShipment: false, editShipment: false, deleteShipment: false,
@@ -119,7 +120,7 @@ export const PERMISSIONS: Record<UserRole, {
     viewTrucking: false, editTrucking: false, viewCustomers: true, editCustomers: true,
     viewQuotes: true, createQuote: true, convertQuote: true, viewInvoices: true, createInvoice: false,
     markInvoicePaid: false, viewReports: true, viewMap: false, viewBenchmark: true,
-    sendEmails: true, manageUsers: false, classifyHs: false, generateDocs: true, viewWarehouse: false, viewDriverApp: false,
+    sendEmails: true, manageUsers: false, classifyHs: false, generateDocs: true, viewWarehouse: false, viewDriverApp: false, viewApprovals: true,
   },
   customs: {
     viewDashboard: true, viewShipments: true, createShipment: false, editShipment: false, deleteShipment: false,
@@ -127,7 +128,7 @@ export const PERMISSIONS: Record<UserRole, {
     viewTrucking: false, editTrucking: false, viewCustomers: true, editCustomers: false,
     viewQuotes: false, createQuote: false, convertQuote: false, viewInvoices: false, createInvoice: false,
     markInvoicePaid: false, viewReports: false, viewMap: false, viewBenchmark: false,
-    sendEmails: false, manageUsers: false, classifyHs: true, generateDocs: true, viewWarehouse: true, viewDriverApp: false,
+    sendEmails: false, manageUsers: false, classifyHs: true, generateDocs: true, viewWarehouse: true, viewDriverApp: false, viewApprovals: true,
   },
   driver: {
     viewDashboard: false, viewShipments: false, createShipment: false, editShipment: false, deleteShipment: false,
@@ -135,7 +136,7 @@ export const PERMISSIONS: Record<UserRole, {
     viewTrucking: true, editTrucking: true, viewCustomers: false, editCustomers: false,
     viewQuotes: false, createQuote: false, convertQuote: false, viewInvoices: false, createInvoice: false,
     markInvoicePaid: false, viewReports: false, viewMap: false, viewBenchmark: false,
-    sendEmails: false, manageUsers: false, classifyHs: false, generateDocs: false, viewWarehouse: false, viewDriverApp: true,
+    sendEmails: false, manageUsers: false, classifyHs: false, generateDocs: false, viewWarehouse: false, viewDriverApp: true, viewApprovals: false,
   },
 };
 

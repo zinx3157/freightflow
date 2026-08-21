@@ -405,6 +405,7 @@ export interface Invoice {
   currency: string;
   sentAt?: string;
   openedAt?: string;
+  einvoice?: EInvoiceMeta; // Batch 8 — Madagascar OOBO e-invoice
 }
 
 export interface Quote {
@@ -575,4 +576,54 @@ export interface YardSlot {
   reefer?: boolean;
   dg?: boolean;
   dwellHours?: number;
+}
+
+// ===== Batch 8 types =====
+export type DocApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
+export interface DocApproval {
+  id: string;
+  docId?: string;        // optional link to DocFile
+  docName: string;
+  relatedType?: 'shipment' | 'invoice' | 'customs' | 'customer';
+  relatedId?: string;
+  requestedBy: string;
+  requestedAt: string;
+  reviewers: { name: string; role: string; status: DocApprovalStatus; decidedAt?: string; comment?: string }[];
+  status: DocApprovalStatus;
+  category: string;       // e.g. "BL Release", "License", "Certificate", "Commercial Invoice"
+  expiryDate?: string;    // for permits/licenses
+  alert30d?: boolean;
+  alert7d?: boolean;
+}
+
+export type NotifKind =
+  | 'shipment' | 'customs' | 'trucking' | 'pod' | 'warehouse' | 'yard'
+  | 'invoice' | 'quote' | 'email' | 'doc' | 'approval' | 'ai' | 'system';
+export interface AppNotification {
+  id: string;
+  kind: NotifKind;
+  title: string;
+  body?: string;
+  href?: string;         // deep link
+  relatedId?: string;
+  at: string;            // ISO timestamp
+  read: boolean;
+}
+
+// Extend Invoice with Madagascar e-invoicing (OOBO / DGI NIF/STAT fields)
+export interface EInvoiceMeta {
+  invoiceType: 'standard' | 'debit_note' | 'credit_note';
+  nifEmitter: string;    // NIF du prestataire (FreightFlow)
+  statEmitter: string;   // STAT
+  nifClient?: string;
+  statClient?: string;
+  ooboStatus: 'draft' | 'submitted' | 'validated' | 'rejected';
+  ooboUid?: string;      // identifiant unique OOBO
+  ooboSubmittedAt?: string;
+  ooboQrCode?: string;
+  htva: number;          // Hors TVA
+  tvaRate: number;       // 20% standard MG
+  tva: number;
+  ttc: number;           // TTC
+  paymentMethod: 'bank_transfer' | 'cash' | 'check' | 'mobile_money' | 'card';
 }

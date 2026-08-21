@@ -34,12 +34,41 @@ export default function YardPage() {
   const [moves, setMoves] = useState<YardMove[]>([]);
   const [showMove, setShowMove] = useState(false);
   const [filter, setFilter] = useState<'all'|'occupied'|'reefer'|'dg'|'longdwell'|'empty'>('all');
+  const [dragFrom, setDragFrom] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState<string | null>(null);
 
   const refresh = () => {
     setSlots(db.allYardSlots());
     setMoves(db.allYardMoves());
   };
   useEffect(() => { refresh(); window.addEventListener('ff:data-changed', refresh); return () => window.removeEventListener('ff:data-changed', refresh); }, []);
+
+  // Batch 8: Drag-and-drop between yard slots
+  const onDragStart = (code: string) => (e: React.DragEvent) => {
+    const slot = slots.find(s => s.code === code);
+    if (!slot?.container) { e.preventDefault(); return; }
+    setDragFrom(code);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', code);
+  };
+  const onDragOver = (code: string) => (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOver !== code) setDragOver(code);
+  };
+  const onDragLeave = () => setDragOver(null);
+  const onDrop = (code: string) => (e: React.DragEvent) => {
+    e.preventDefault();
+    const from = dragFrom || e.dataTransfer.getData('text/plain');
+    setDragFrom(null); setDragOver(null);
+    if (!from || from === code) return;
+    const src = slots.find(s => s.code === from);
+    const dst = slots.find(s => s.code === code);
+    if (!src?.container) return;
+    if (dst?.container) return; // only drop on empty slots
+    db.moveYardSlot(from, code);
+    refresh();
+  };
 
   const stats = {
     total: slots.length,
@@ -95,25 +124,34 @@ export default function YardPage() {
           <Card className="p-5 xl:col-span-2">
             <h3 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
               <Grid3x3 className="w-4 h-4 text-brand" /> Yard Plan
-              <span className="text-xs font-normal text-slate-500 ml-1">(click a slot to see container)</span>
+              <span className="text-xs font-normal text-slate-500 ml-1">(drag a container to an empty slot to yard-shift)</span>
             </h3>
             <div className="space-y-1.5 overflow-x-auto">
               {Object.keys(byRow).sort().map(row => (
                 <div key={row} className="flex items-center gap-1.5">
                   <div className="w-6 text-xs font-bold text-slate-400 text-right">{row}</div>
                   <div className="flex gap-1.5 flex-wrap">
-                    {byRow[row].sort((a,b) => parseInt(a.code.split('-')[1]) - parseInt(b.code.split('-')[1])).map(s => (
+                    {byRow[row].sort((a,b) => parseInt(a.code.split('-')[1]) - parseInt(b.code.split('-')[1])).map(s => {
+                      const isDragSource = dragFrom === s.code;
+                      const isDragTarget = dragOver === s.code && !s.container && dragFrom && dragFrom !== s.code;
+                      return (
                       <div
                         key={s.code}
-                        title={`${s.code} — ${s.container || 'EMPTY'} (${s.zone}${s.dwellHours?` · ${s.dwellHours}h dwell`:''})`}
-                        className={`w-12 h-10 rounded-md border flex flex-col items-center justify-center text-[9px] font-mono font-bold cursor-pointer transition-all hover:scale-110 hover:shadow-md ${s.container ? ZONE_COLORS[s.zone] : 'bg-slate-50 dark:bg-slate-800/50 border-dashed border-slate-300 dark:border-slate-700 text-slate-300 dark:text-slate-600'} ${s.container && (s.dwellHours||0) > 72 ? 'ring-2 ring-rose-400 animate-pulse' : ''}`}
+                        draggable={!!s.container}
+                        onDragStart={onDragStart(s.code)}
+                        onDragOver={onDragOver(s.code)}
+                        onDragLeave={onDragLeave}
+                        onDrop={onDrop(s.code)}
+                        onDragEnd={() => { setDragFrom(null); setDragOver(null); }}
+                        title={`${s.code} — ${s.container || 'EMPTY'} (${s.zone}${s.dwellHours?` · ${s.dwellHours}h dwell`:''})${s.container?' — drag to shift':''}`}
+                        className={`w-12 h-10 rounded-md border flex flex-col items-center justify-center text-[9px] font-mono font-bold cursor-pointer transition-all hover:scale-110 hover:shadow-md select-none ${s.container ? ZONE_COLORS[s.zone] : 'bg-slate-50 dark:bg-slate-800/50 border-dashed border-slate-300 dark:border-slate-700 text-slate-300 dark:text-slate-600'} ${s.container && (s.dwellHours||0) > 72 ? 'ring-2 ring-rose-400 animate-pulse' : ''} ${isDragSource ? 'opacity-40 scale-90' : ''} ${isDragTarget ? 'ring-2 ring-brand bg-brand/10 scale-110' : ''}`}
                       >
                         <div>{s.code.split('-')[1]}</div>
                         {s.container && <div className="text-[8px] opacity-80 leading-none">{s.container.slice(0,4)}</div>}
                         {s.reefer && s.container && <div className="text-[7px] text-cyan-600">❄</div>}
                         {s.dg && s.container && <div className="text-[7px] text-rose-600">☢</div>}
                       </div>
-                    ))}
+                    );})}
                   </div>
                 </div>
               ))}

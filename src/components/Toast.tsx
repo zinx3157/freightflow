@@ -43,12 +43,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const dismiss = (id: number) => setToasts((cur) => cur.filter((x) => x.id !== id));
 
-  // Listen for real-time events and show toasts
+  // Listen for ff:toast events dispatched from store CRUD methods
   useEffect(() => {
-    function onData() { /* storage event already triggers realtime */ }
-    window.addEventListener('ff:data-changed', onData);
-    return () => window.removeEventListener('ff:data-changed', onData);
-  }, []);
+    function onToast(e: Event) {
+      const ev = e as CustomEvent<{ title: string; description?: string; variant?: ToastVariant; duration?: number }>;
+      if (ev.detail) toast(ev.detail);
+    }
+    window.addEventListener('ff:toast', onToast as EventListener);
+    return () => window.removeEventListener('ff:toast', onToast as EventListener);
+  }, [toast]);
 
   return (
     <Ctx.Provider value={{ toast }}>

@@ -24,9 +24,12 @@ import type {
   PortalMessage,
   YardMove,
   YardSlot,
+  DocApproval,
+  AppNotification,
+  EInvoiceMeta,
 } from './types';
 
-const KEY = 'freight_saas_db_v7';
+const KEY = 'freight_saas_db_v8';
 
 const EF = { air: 602, sea: 15, road: 110 };
 const LANE_KM: Record<string, number> = {
@@ -71,7 +74,10 @@ export interface DB {
   portalMessages: PortalMessage[];
   yardMoves: YardMove[];
   yardSlots: YardSlot[];
-  counter: { shipment: number; invoice: number; quote: number; trucking: number; booking: number; container: number; email: number; doc: number; rate: number; qr: number; customsDec: number; je: number; note: number; whr: number; leg: number; pod: number; pm: number; ym: number };
+  // Batch 8
+  docApprovals: DocApproval[];
+  notifications: AppNotification[];
+  counter: { shipment: number; invoice: number; quote: number; trucking: number; booking: number; container: number; email: number; doc: number; rate: number; qr: number; customsDec: number; je: number; note: number; whr: number; leg: number; pod: number; pm: number; ym: number; approval: number; notif: number };
 }
 
 function uid(prefix = '') {
@@ -81,6 +87,7 @@ function uid(prefix = '') {
 function seed(): DB {
   const now = new Date();
   const days = (n: number) => { const d = new Date(now); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+  const daysAgo = (n: number) => { const d = new Date(now); d.setDate(d.getDate() - n); return d.toISOString().slice(0, 10); };
   const daysAgoIso = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
   const hoursAgoIso = (n: number) => new Date(Date.now() - n * 3600000).toISOString();
 
@@ -562,6 +569,58 @@ function seed(): DB {
     { id: uid('ym_'), containerNumber: 'MSKU7788990', type: 'mounted_to_truck', location: 'Yard B-07', terminal: 'Toamasina Intl Container Terminal', time: hoursAgoIso(4), truckPlate: '6789 TAA', sealed: true, officer: 'Rivo A.' },
   ];
 
+  // ---------- Batch 8: Document Approvals ----------
+  const docApprovals: DocApproval[] = [
+    { id: uid('ap_'), docName: 'Original Bill of Lading — FRT-2026-0001', relatedType: 'shipment', relatedId: shipments[0].id, category: 'BL Release', requestedBy: 'Voahangy R. (Ops)', requestedAt: daysAgoIso(1), status: 'pending', reviewers: [
+      { name: 'Lina Ratsimba', role: 'Customs Mgr', status: 'pending' },
+      { name: 'Andry R.', role: 'Finance', status: 'pending' },
+    ]},
+    { id: uid('ap_'), docName: 'Phytosanitary Certificate — Spices to Rotterdam', relatedType: 'shipment', relatedId: shipments[4].id, category: 'Certificate', requestedBy: 'Hery Lalao (Sales)', requestedAt: hoursAgoIso(18), status: 'pending', reviewers: [
+      { name: 'Ministry of Agriculture', role: 'External', status: 'pending' },
+      { name: 'Voahangy R.', role: 'Ops Mgr', status: 'approved', decidedAt: hoursAgoIso(12), comment: 'Docs complete, awaiting cert' },
+    ], expiryDate: days(21) },
+    { id: uid('ap_'), docName: 'Customs Broker License Renewal', category: 'License', requestedBy: 'Admin', requestedAt: daysAgo(-90), status: 'approved', reviewers: [
+      { name: 'Direction Générale des Douanes', role: 'Regulator', status: 'approved', decidedAt: daysAgo(-80), comment: 'License valid until 31/12/2026' },
+    ], expiryDate: '2026-12-31' },
+    { id: uid('ap_'), docName: 'Commercial Invoice INV-2026-0103 — Mada Imports', relatedType: 'invoice', relatedId: '', category: 'Commercial Invoice', requestedBy: 'Finance', requestedAt: daysAgoIso(1), status: 'pending', reviewers: [
+      { name: 'Andry R.', role: 'Finance Mgr', status: 'pending' },
+    ]},
+  ];
+
+  // ---------- Batch 8: Notifications feed (seeded with recent activity) ----------
+  const notifications: AppNotification[] = [
+    { id: uid('n_'), kind: 'trucking', title: 'POD signed for TRK-2026-0001', body: 'Rivo A. delivered at Indian Ocean Textiles HQ', href: `/trucking/`, at: hoursAgoIso(2), read: false },
+    { id: uid('n_'), kind: 'customs', title: 'FRT-2026-0002 held for inspection', body: 'ASYCUDA: Red channel — physical inspection required at Ivato', href: `/customs/`, at: hoursAgoIso(5), read: false },
+    { id: uid('n_'), kind: 'shipment', title: 'FRT-2026-0001 departed Toamasina', body: 'MAERSK EMDEN 042E — atd ' + daysAgoIso(9).slice(0,10), href: `/shipments/`, at: daysAgoIso(9), read: true },
+    { id: uid('n_'), kind: 'email', title: 'Quote Q-2026-0201 opened by Global Spice', body: 'Customer viewed quote 20h ago — follow up?', href: `/emails/`, at: hoursAgoIso(20), read: true },
+    { id: uid('n_'), kind: 'approval', title: 'Awaiting your approval: BL Release FRT-0001', body: 'Requested by Voahangy R. — 2 reviewers pending', href: `/shipments/?id=${shipments[0].id}`, at: hoursAgoIso(12), read: false },
+    { id: uid('n_'), kind: 'yard', title: 'Container MSKU7788990 dwell > 72h', body: 'Slot B-07 — reefer at 5°C, awaiting clearance', href: `/yard/`, at: hoursAgoIso(4), read: false },
+    { id: uid('n_'), kind: 'ai', title: 'AI: 3 shipments arrive in next 7 days', body: 'Capacity alerts on Toamasina yard — review dispatches', href: `/reports/`, at: hoursAgoIso(8), read: true },
+    { id: uid('n_'), kind: 'system', title: 'Welcome to FreightFlow BETA 8', body: 'New: Doc approvals, OOBO e-invoicing, PWA offline, CSV export, yard drag-drop, quote→shipment, toasts, notification feed', href: `/benchmark/`, at: new Date().toISOString(), read: false },
+  ];
+
+  // Add an MGA e-invoice sample (Madagascar OOBO format) onto invoice index 2
+  if (invoices[2]) {
+    const eInvSample: EInvoiceMeta = {
+      invoiceType: 'standard', nifEmitter: '1003456789', statEmitter: '9876543210123',
+      nifClient: '2001122334', statClient: '5544332210987', ooboStatus: 'validated',
+      ooboUid: 'OOBO-MG-2026-08-' + Math.floor(100000 + Math.random()*899999),
+      ooboSubmittedAt: daysAgoIso(7),
+      ooboQrCode: 'https://oobo.dgi.mg/v/' + Math.random().toString(36).slice(2,14),
+      htva: 2500000, tvaRate: 20, tva: 500000, ttc: 3000000, paymentMethod: 'bank_transfer',
+    };
+    invoices[2] = {
+      ...invoices[2],
+      currency: 'MGA', subtotal: eInvSample.htva, tax: eInvSample.tva, total: eInvSample.ttc,
+      einvoice: eInvSample,
+      items: [
+        { description: 'Fret maritime Shanghai-Toamasina (2×40HC)', amount: 1700000 },
+        { description: 'Dédouanement & formalités (est.)', amount: 450000 },
+        { description: 'Transport routier Toamasina-Tana', amount: 350000 },
+      ],
+    };
+  }
+
   return {
     customers, shipments, trucking, invoices, quotes, activities,
     containers, bookings, emails, dg, docs, rates, quoteRequests,
@@ -570,7 +629,9 @@ function seed(): DB {
     warehouseReceipts, cargoItems, shipmentLegs, inboundEmails, pods,
     // Batch 7
     portalMessages, yardMoves, yardSlots,
-    counter: { shipment: 8, invoice: 103, quote: 203, trucking: 4, booking: 6, container: 8, email: 5, doc: docs.length, rate: rates.length, qr: quoteRequests.length, customsDec: customsDeclarations.length, je: journal.length, note: customerNotes.length, whr: warehouseReceipts.length, leg: shipmentLegs.length, pod: pods.length, pm: portalMessages.length, ym: yardMoves.length },
+    // Batch 8
+    docApprovals, notifications,
+    counter: { shipment: 8, invoice: 103, quote: 203, trucking: 4, booking: 6, container: 8, email: 5, doc: docs.length, rate: rates.length, qr: quoteRequests.length, customsDec: customsDeclarations.length, je: journal.length, note: customerNotes.length, whr: warehouseReceipts.length, leg: shipmentLegs.length, pod: pods.length, pm: portalMessages.length, ym: yardMoves.length, approval: docApprovals.length, notif: notifications.length },
   };
 }
 
@@ -602,8 +663,13 @@ function load(): DB {
     if (!parsed.portalMessages) parsed.portalMessages = [];
     if (!parsed.yardMoves) parsed.yardMoves = [];
     if (!parsed.yardSlots) parsed.yardSlots = [];
+    // Batch 8
+    if (!parsed.docApprovals) parsed.docApprovals = [];
+    if (!parsed.notifications) parsed.notifications = [];
     if (!parsed.counter.pm) parsed.counter.pm = 0;
     if (!parsed.counter.ym) parsed.counter.ym = 0;
+    if (!parsed.counter.approval) parsed.counter.approval = 0;
+    if (!parsed.counter.notif) parsed.counter.notif = 0;
     if (!parsed.counter.booking) parsed.counter.booking = 0;
     if (!parsed.counter.container) parsed.counter.container = 0;
     if (!parsed.counter.email) parsed.counter.email = 0;
@@ -626,9 +692,63 @@ function save(db: DB) {
   try { window.dispatchEvent(new CustomEvent('ff:data-changed')); } catch {}
 }
 
-function addActivity(db: DB, type: Activity['type'], message: string, reference: string) {
+// Toast bus — store dispatches toast events when important actions happen.
+// UI listens via window.addEventListener('ff:toast', ...).
+type ToastPayload = { title: string; description?: string; variant?: 'success'|'error'|'warning'|'info'|'shipment'|'email'|'ai'; duration?: number };
+function toast(p: ToastPayload) {
+  if (typeof window === 'undefined') return;
+  try { window.dispatchEvent(new CustomEvent<ToastPayload>('ff:toast', { detail: p })); } catch {}
+}
+
+// Notification bus — adds to persistent notification feed AND fires toast
+function pushNotif(db: DB, kind: AppNotification['kind'], title: string, body?: string, href?: string, relatedId?: string) {
+  const n: AppNotification = { id: uid('n_'), kind, title, body, href, relatedId, at: new Date().toISOString(), read: false };
+  db.notifications.unshift(n);
+  if (db.notifications.length > 200) db.notifications.length = 200;
+  db.counter.notif += 1;
+  const variantMap: Record<string, ToastPayload['variant']> = {
+    shipment: 'shipment', customs: 'warning', trucking: 'shipment', pod: 'success',
+    warehouse: 'info', yard: 'info', invoice: 'success', quote: 'shipment',
+    email: 'email', doc: 'info', approval: 'warning', ai: 'ai', system: 'info',
+  };
+  toast({ title, description: body, variant: variantMap[kind] || 'info' });
+  return n;
+}
+
+function addActivity(db: DB, type: Activity['type'], message: string, reference: string, opts: { silent?: boolean } = {}) {
   db.activities.unshift({ id: uid('a_'), type, message, reference, timestamp: new Date().toISOString() });
   if (db.activities.length > 80) db.activities.length = 80;
+  // Auto-create a notification + toast for significant events (Batch 8)
+  // Only fire for state-changing messages to avoid noise.
+  if (opts.silent) return;
+  try {
+    const lc = message.toLowerCase();
+    const isSignificant =
+      /status:|delivered|released|rejected|inspection|confirmed|paid|p\.?o\.?d|signed|approved|submitted|booked\b|departed|arrived|accepted|e-invoice|oo|cutoff/i.test(lc);
+    if (!isSignificant) return;
+    const kindMap: Record<string, AppNotification['kind']> = {
+      shipment: 'shipment', customs: 'customs', invoice: 'invoice', quote: 'quote',
+      email: 'email', warehouse: 'warehouse', trucking: 'trucking', pod: 'pod',
+      booking: 'shipment', dg: 'system', note: 'system', customer: 'system',
+    };
+    const hrefMap: Record<string, string> = {
+      shipment: `/shipments/`, invoice: `/invoices/`, quote: `/quotes/`,
+      customs: `/customs/`, email: `/emails/`, warehouse: `/warehouse/`,
+      trucking: `/trucking/`, pod: `/trucking/`, booking: `/shipments/`,
+    };
+    const k = kindMap[type];
+    if (!k) return;
+    const hrefBase = hrefMap[type] || '/';
+    let href = hrefBase;
+    if (reference) {
+      const lookup = db.shipments.find(s => s.reference === reference)
+        || db.invoices.find(i => i.number === reference)
+        || db.quotes.find(q => q.number === reference)
+        || db.trucking.find(t => t.reference === reference);
+      if (lookup) href = `${hrefBase}?id=${(lookup as any).id}`;
+    }
+    pushNotif(db, k, message.slice(0, 90), reference, href);
+  } catch {}
 }
 
 export const db = {
@@ -1059,6 +1179,113 @@ export const db = {
     const occupied = slots.filter(s => s.container).length;
     const longDwell = slots.filter(s => s.container && (s.dwellHours||0) > 72).length;
     return { total: slots.length, occupied, free: slots.length - occupied, longDwell };
+  },
+
+  // Batch 8: drag-and-drop yard shift between two slots
+  moveYardSlot: (fromCode: string, toCode: string) => {
+    const d = load();
+    const si = d.yardSlots.findIndex(s => s.code === fromCode);
+    const di = d.yardSlots.findIndex(s => s.code === toCode);
+    if (si < 0 || di < 0) return null;
+    const src = d.yardSlots[si], dst = d.yardSlots[di];
+    if (!src.container || dst.container) return null;
+    d.yardSlots[di] = { ...dst, container: src.container, size: src.size, reefer: src.reefer, dg: src.dg, dwellHours: src.dwellHours, zone: src.zone };
+    d.yardSlots[si] = { code: src.code, zone: 'empty' };
+    d.counter.ym += 1;
+    d.yardMoves.unshift({
+      id: uid('ym_'), containerNumber: src.container, type: 'yard_shift',
+      location: `${fromCode} → ${toCode}`,
+      terminal: 'Toamasina Intl Container Terminal',
+      time: new Date().toISOString(), officer: 'Yard Planner',
+    });
+    toast({ title: `Container moved`, description: `${src.container} ${fromCode} → ${toCode}`, variant: 'success' });
+    addActivity(d, 'warehouse', `Container ${src.container} shifted ${fromCode} → ${toCode}`, src.container, { silent: true });
+    save(d);
+    return d.yardSlots[di];
+  },
+
+  // ----- Batch 8: Document approvals -----
+  allApprovals: () => load().docApprovals.sort((a,b) => b.requestedAt.localeCompare(a.requestedAt)),
+  requestApproval: (a: Omit<DocApproval, 'id'|'status'>) => {
+    const d = load(); d.counter.approval += 1;
+    const na: DocApproval = { ...a, id: uid('ap_'), status: 'pending' };
+    d.docApprovals.unshift(na);
+    pushNotif(d, 'approval', `Approval requested: ${a.docName}`, a.category);
+    save(d); return na;
+  },
+  decideApproval: (id: string, reviewerName: string, status: 'approved'|'rejected', comment?: string) => {
+    const d = load();
+    const ap = d.docApprovals.find(x => x.id === id);
+    if (!ap) return null;
+    const rev = ap.reviewers.find(r => r.name === reviewerName);
+    if (rev) { rev.status = status; rev.decidedAt = new Date().toISOString(); rev.comment = comment; }
+    else { ap.reviewers.push({ name: reviewerName, role: 'Ad-hoc', status, decidedAt: new Date().toISOString(), comment }); }
+    const allDone = ap.reviewers.every(r => r.status === 'approved' || r.status === 'rejected');
+    if (allDone) ap.status = ap.reviewers.some(r => r.status === 'rejected') ? 'rejected' : 'approved';
+    pushNotif(d, 'approval',
+      ap.status === 'approved' ? `Approved: ${ap.docName}` : ap.status === 'rejected' ? `Rejected: ${ap.docName}` : `Review from ${reviewerName} on ${ap.docName}`,
+      comment, `/shipments/?rel=approval&id=${ap.id}`);
+    save(d); return ap;
+  },
+
+  // ----- Batch 8: Notifications feed -----
+  allNotifications: () => load().notifications,
+  unreadNotifCount: () => load().notifications.filter(n => !n.read).length,
+  markNotifRead: (id: string) => { const d = load(); const n = d.notifications.find(x => x.id === id); if (n) n.read = true; save(d); },
+  markAllNotifRead: () => { const d = load(); d.notifications.forEach(n => n.read = true); save(d); },
+
+  // ----- Batch 8: Quote -> Shipment conversion -----
+  convertQuoteToShipment: (quoteId: string) => {
+    const d = load();
+    const q = d.quotes.find(x => x.id === quoteId);
+    if (!q) return null;
+    d.counter.shipment += 1;
+    const ref = `FRT-2026-${String(d.counter.shipment).padStart(4,'0')}`;
+    const ns: any = {
+      id: uid('s_'), reference: ref, mode: q.mode, direction: q.direction,
+      status: 'booked', customerName: q.customerName, customerEmail: q.customerEmail,
+      origin: q.origin, destination: q.destination,
+      portOfLoading: q.origin.split(',')[0].trim(), portOfDischarge: q.destination.split(',')[0].trim(),
+      weight: q.weight, volume: q.volume, commodity: q.commodity,
+      pieces: 1, incoterm: 'FOB', carrier: 'TBC', vesselOrFlight: 'TBD',
+      mawbOrBl: 'TBD', etd: new Date(Date.now()+86400000*3).toISOString().slice(0,10),
+      eta: q.mode === 'air' ? new Date(Date.now()+86400000*5).toISOString().slice(0,10) : new Date(Date.now()+86400000*32).toISOString().slice(0,10),
+      customsStatus: 'pending', totalAmount: q.total, currency: 'USD',
+      freightCost: q.freightRate, customsCost: q.customsFee, truckingCost: q.truckingFee,
+      createdAt: new Date().toISOString(), co2e: estCo2(q.mode, q.weight, q.origin.split(',')[0].trim(), q.destination.split(',')[0].trim()),
+    };
+    d.shipments.unshift(ns);
+    q.status = 'accepted' as any;
+    addActivity(d, 'shipment', `Quote ${q.number} converted to shipment ${ref}`, ref);
+    toast({ title: `Shipment ${ref} created`, description: `Converted from quote ${q.number}`, variant: 'success' });
+    save(d); return ns;
+  },
+
+  // ----- Batch 8: OOBO Madagascar e-invoice -----
+  submitOobo: (invoiceId: string) => {
+    const d = load();
+    const inv = d.invoices.find(x => x.id === invoiceId);
+    if (!inv) return null;
+    const htva = inv.subtotal;
+    const tva = inv.tax || Math.round(htva * 0.2);
+    const ttc = htva + tva;
+    inv.einvoice = {
+      invoiceType: 'standard',
+      nifEmitter: inv.einvoice?.nifEmitter || '1003456789',
+      statEmitter: inv.einvoice?.statEmitter || '9876543210123',
+      nifClient: inv.einvoice?.nifClient || '',
+      statClient: inv.einvoice?.statClient || '',
+      ooboStatus: 'validated',
+      ooboUid: 'OOBO-MG-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + String(d.counter.invoice).padStart(6,'0'),
+      ooboSubmittedAt: new Date().toISOString(),
+      ooboQrCode: 'https://oobo.dgi.mg/v/' + Math.random().toString(36).slice(2,14),
+      htva, tvaRate: 20, tva, ttc,
+      paymentMethod: inv.einvoice?.paymentMethod || 'bank_transfer',
+    };
+    inv.tax = tva; inv.total = ttc;
+    addActivity(d, 'invoice', `E-invoice (OOBO) validated for ${inv.number} — UID ${inv.einvoice.ooboUid}`, inv.number);
+    toast({ title: `OOBO e-invoice validated`, description: `${inv.number} → ${inv.einvoice.ooboUid}`, variant: 'success' });
+    save(d); return inv;
   },
 };
 

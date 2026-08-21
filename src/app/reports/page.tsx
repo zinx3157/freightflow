@@ -12,6 +12,8 @@ import {
 } from 'lucide-react';
 import { formatDate, formatMoney, daysFromNow } from '@/lib/utils';
 import Ledger from '@/components/Ledger';
+import { downloadCsv, shipmentsReport, invoicesReport, quotesReport, yardReport } from '@/lib/exportCsv';
+import { Download } from 'lucide-react';
 
 // Emissions factors g/t·km (GLEC)
 const EF = { air: 602, sea: 15, road: 110 };
@@ -184,22 +186,52 @@ export default function ReportsPage() {
     { id: 'ledger', label: 'General Ledger', icon: <FileText className="w-4 h-4" /> },
   ];
 
+  const exportMenu = [
+    { label: 'Shipments (.csv)', fn: () => data && downloadCsv(`freightflow-shipments-${new Date().toISOString().slice(0,10)}`, shipmentsReport(data.shipments)) },
+    { label: 'Invoices (.csv)', fn: () => data && downloadCsv(`freightflow-invoices-${new Date().toISOString().slice(0,10)}`, invoicesReport(data.invoices)) },
+    { label: 'Quotes (.csv)', fn: () => data && downloadCsv(`freightflow-quotes-${new Date().toISOString().slice(0,10)}`, quotesReport(data.quotes)) },
+    { label: 'Yard inventory + moves (.csv)', fn: () => data && downloadCsv(`freightflow-yard-${new Date().toISOString().slice(0,10)}`, yardReport(data.yardSlots, data.yardMoves)) },
+  ];
+  const [exportOpen, setExportOpen] = useState(false);
+
   return (
     <PageShell title="Reports & Business Intelligence" subtitle="Real-time analytics across your entire freight operation.">
 
-      {/* Tabs */}
-      <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg flex-wrap">
-        {tabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => setTab(t.id)}
-            className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition ${
-              tab === t.id ? 'bg-white dark:bg-slate-900 shadow text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-            }`}
-          >
-            {t.icon} {t.label}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        {/* Tabs */}
+        <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg flex-wrap">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className={`px-3 py-2 rounded-md text-sm font-medium flex items-center gap-2 transition ${
+                tab === t.id ? 'bg-white dark:bg-slate-900 shadow text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              {t.icon} {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Batch 8: CSV export */}
+        <div className="relative">
+          <button onClick={() => setExportOpen(o => !o)} className="px-3 py-2 rounded-md text-sm font-medium bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-800">
+            <Download className="w-4 h-4" /> Export CSV
           </button>
-        ))}
+          {exportOpen && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setExportOpen(false)} />
+              <div className="absolute right-0 mt-1 w-64 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-40 overflow-hidden">
+                {exportMenu.map(m => (
+                  <button key={m.label} onClick={() => { m.fn(); setExportOpen(false); }}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-slate-400" /> {m.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {tab === 'overview' && <OverviewTab a={analytics} />}

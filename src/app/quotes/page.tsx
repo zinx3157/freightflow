@@ -162,7 +162,10 @@ export default function QuotesPage() {
                             <>
                             <button title="Accept" onClick={() => setStatus(q.id, 'accepted')} className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600"><Check className="w-4 h-4" /></button>
                             <button title="Reject" onClick={() => setStatus(q.id, 'rejected')} className="p-1.5 rounded hover:bg-rose-50 dark:hover:bg-rose-900/20 text-rose-600"><X className="w-4 h-4" /></button>
-                            <button title="Convert to booking" onClick={() => { alert('Quote accepted — converting to booking. Create a shipment to proceed.'); router.push('/shipments?new=1'); }} className="p-1.5 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600"><Send className="w-4 h-4" /></button>
+                            <button title="Convert to Shipment" onClick={() => {
+                              const newShipment = db.convertQuoteToShipment(q.id);
+                              if (newShipment) router.push(`/shipments/?id=${newShipment.id}`);
+                            }} className="p-1.5 rounded hover:bg-indigo-50 dark:hover:bg-indigo-900/20 text-indigo-600"><Send className="w-4 h-4" /></button>
                             </>
                           )}
                       </div>
