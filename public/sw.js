@@ -1,20 +1,13 @@
 /* FreightFlow Beta 8 — Service Worker
-   Provides offline shell caching for the statically-exported SPA.
-   Strategy:
-     - Precache app shell on install
-     - Network-first for navigations (fallback to cached shell when offline)
-     - Cache-first for static assets (/_next/static/, /manifest.json, icons)
-*/
+ * Offline shell + stale-while-revalidate for static assets.
+ */
 
-const CACHE = 'freightflow-b8-v1';
-const SHELL = [
-  '/',
-  '/manifest.json',
-];
+const CACHE = 'freightflow-b8-v2';
+const APP_SHELL = ['/'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
   );
 });
 
@@ -32,27 +25,41 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
-  // HTML navigations: network-first, fallback to cached shell
-  if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
+  // Never cache service worker itself
+  if (url.pathname.endsWith('/sw.js')) {
+    event.respondWith(fetch(req).catch(() => caches.match('/')));
+    return;
+  }
+
+  // HTML navigations: network-first with cached-shell fallback (so clicking new routes works offline)
+  if (req.mode === 'navigate' ||
+      (req.headers.get('accept') || '').includes('text/html')) {
     event.respondWith(
-      fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy));
-        return res;
-      }).catch(() => caches.match(req).then((r) => r || caches.match('/')))
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+          return res;
+        })
+        .catch(() =>
+          caches.match(req).then((r) => r || caches.match('/').then((root) => root || caches.match('/index.html')))
+        )
     );
     return;
   }
 
-  // Static assets: cache-first with network fallback
+  // Static assets: cache-first with network update (stale-while-revalidate)
   if (url.pathname.startsWith('/_next/') || /\.(?:js|css|woff2?|png|jpg|jpeg|gif|svg|ico|webp|json)$/i.test(url.pathname)) {
     event.respondWith(
       caches.match(req).then((cached) => {
-        return cached || fetch(req).then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-          return res;
-        }).catch(() => cached);
+        const network = fetch(req)
+          .then((res) => {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+            return res;
+          })
+          .catch(() => cached);
+        return cached || network;
       })
     );
   }

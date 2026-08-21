@@ -72,10 +72,17 @@ export default function ShipmentsPage() {
   }, [data]);
 
   const handleCreate = (payload: Omit<Shipment, 'id' | 'createdAt' | 'reference'>) => {
-    db.createShipment(payload);
+    const created = db.createShipment(payload);
     setData(db.getAll());
     setModalOpen(false);
+    // Navigate to the new shipment (clears ?new=1 and opens detail)
+    router.push(`/shipments/?id=${created.id}`);
   };
+
+  // Close the new-shipment modal if user clears ?new=1 (e.g. by back-navigating)
+  useEffect(() => {
+    if (params.get('new') !== '1' && modalOpen) setModalOpen(false);
+  }, [params, modalOpen]);
 
   if (!data) return <PageShell title="Shipments"><div>Loading…</div></PageShell>;
 
@@ -278,6 +285,7 @@ function NewShipmentModal({
       status,
       customerId,
       customerName: cust.name,
+      customerEmail: cust.email,
       origin,
       destination,
       portOfLoading: pol,
@@ -287,13 +295,13 @@ function NewShipmentModal({
       pieces: Number(pieces),
       commodity,
       incoterm,
-      carrier,
-      vesselOrFlight,
-      mawbOrBl,
+      carrier: carrier || 'TBD',
+      vesselOrFlight: vesselOrFlight || 'TBD',
+      mawbOrBl: mawbOrBl || 'TBD',
       etd,
       eta,
       customsStatus: 'pending',
-      totalAmount: Number(totalAmount),
+      totalAmount: Number(totalAmount) || 0,
       currency,
       notes,
     });
