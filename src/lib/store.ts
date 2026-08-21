@@ -29,7 +29,7 @@ import type {
   EInvoiceMeta,
 } from './types';
 
-const KEY = 'freight_saas_db_v8';
+const KEY = 'freight_saas_db_v9';
 
 const EF = { air: 602, sea: 15, road: 110 };
 const LANE_KM: Record<string, number> = {

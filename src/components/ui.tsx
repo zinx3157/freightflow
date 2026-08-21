@@ -22,7 +22,7 @@ export function Button({
     danger: 'bg-rose-600 text-white hover:bg-rose-700',
     outline: 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800',
   };
-  const sizes = { sm: 'px-3 py-1.5 text-sm', md: 'px-4 py-2 text-sm', lg: 'px-5 py-2.5' };
+  const sizes = { sm: 'px-3 py-1.5 text-sm min-h-[36px]', md: 'px-4 py-2 text-sm min-h-[40px]', lg: 'px-5 py-2.5 min-h-[44px]' };
   return (
     <button className={cn(base, variants[variant], sizes[size], className)} {...props}>
       {children}
@@ -151,24 +151,27 @@ export function Modal({
   const sizes = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' };
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm flex items-end sm:items-start sm:justify-center overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className={cn('bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full my-10', sizes[size])}
+        className={cn(
+          'bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl shadow-2xl w-full sm:my-10 max-h-[92vh] sm:max-h-[85vh] flex flex-col overflow-hidden ff-sheet-up',
+          sizes[size]
+        )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h3>
+        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white pr-4 truncate">{title}</h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xl leading-none"
+            className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xl leading-none w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
             aria-label="Close"
           >
             ×
           </button>
         </div>
-        <div className="p-6 text-slate-800 dark:text-slate-200">{children}</div>
+        <div className="p-4 sm:p-6 text-slate-800 dark:text-slate-200 overflow-y-auto overscroll-contain">{children}</div>
       </div>
     </div>
   );

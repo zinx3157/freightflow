@@ -9,8 +9,8 @@ import BetaBanner from '@/components/BetaBanner';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 
 export const metadata: Metadata = {
-  title: 'FreightFlow — Logistics OS (Beta 8)',
-  description: 'Air & Sea freight operations, customs, trucking, WMS, yard, POD — the modern CargoWise alternative.',
+  title: 'FreightFlow — Logistics OS (Beta 9 · Mobile)',
+  description: 'Air & sea freight operations, customs, trucking, WMS, yard, POD — the modern CargoWise alternative. Works offline on any device.',
   manifest: '/manifest.json',
   appleWebApp: { capable: true, title: 'FreightFlow', statusBarStyle: 'black-translucent' },
   icons: { icon: '/favicon.ico' },

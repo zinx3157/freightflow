@@ -140,25 +140,25 @@ export default function Dashboard() {
       title="Dashboard"
       subtitle={`Welcome back. You have ${stats.active} active shipments today.`}
     >
-      {/* Quick actions */}
-      <div className="flex flex-wrap gap-2">
-        <Button onClick={() => router.push('/shipments?new=1')}>
-          <Package className="w-4 h-4" /> New Shipment
+      {/* Quick actions — scrollable on mobile */}
+      <div className="flex gap-2 overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 pb-1 no-scrollbar ff-table-wrap">
+        <Button onClick={() => router.push('/shipments?new=1')} className="shrink-0">
+          <Package className="w-4 h-4" /> <span className="hidden sm:inline">New Shipment</span><span className="sm:hidden">New</span>
         </Button>
-        <Button variant="outline" onClick={() => router.push('/quotes?new=1')}>
-          <ArrowUpRight className="w-4 h-4" /> Create Quote
+        <Button variant="outline" onClick={() => router.push('/quotes?new=1')} className="shrink-0">
+          <ArrowUpRight className="w-4 h-4" /> <span className="hidden sm:inline">Create Quote</span><span className="sm:hidden">Quote</span>
         </Button>
-        <Button variant="outline" onClick={() => router.push('/trucking?new=1')}>
-          <Truck className="w-4 h-4" /> Dispatch Truck
+        <Button variant="outline" onClick={() => router.push('/trucking?new=1')} className="shrink-0">
+          <Truck className="w-4 h-4" /> <span className="hidden sm:inline">Dispatch Truck</span><span className="sm:hidden">Truck</span>
         </Button>
-        <Button variant="outline" onClick={() => router.push('/invoices?new=1')}>
-          <DollarSign className="w-4 h-4" /> Issue Invoice
+        <Button variant="outline" onClick={() => router.push('/invoices?new=1')} className="shrink-0">
+          <DollarSign className="w-4 h-4" /> <span className="hidden sm:inline">Issue Invoice</span><span className="sm:hidden">Invoice</span>
         </Button>
-        <Button variant="outline" onClick={() => router.push('/emails')}>
-          <Mail className="w-4 h-4" /> Email Center
+        <Button variant="outline" onClick={() => router.push('/emails')} className="shrink-0">
+          <Mail className="w-4 h-4" /> <span className="hidden sm:inline">Email Center</span><span className="sm:hidden">Email</span>
         </Button>
-        <Button variant="ghost" onClick={() => { if (confirm('Reset demo data?')) { localStorage.removeItem('freightflow_auth_v1'); db.reset(); location.reload(); } }}>
-          Reset demo data
+        <Button variant="ghost" onClick={() => { if (confirm('Reset demo data?')) { localStorage.removeItem('freightflow_auth_v1'); db.reset(); location.reload(); } }} className="shrink-0">
+          Reset
         </Button>
       </div>
 

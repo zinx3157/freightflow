@@ -2,21 +2,57 @@
 
 import { useEffect } from 'react';
 
-// Registers the PWA service worker after the app has loaded.
-// Gracefully no-ops in unsupported browsers or dev/preview envs.
 export default function ServiceWorkerRegister() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (!('serviceWorker' in navigator)) return;
-    if (window.location.protocol === 'file:') return;
-    // Don't register on localhost dev (avoids caching stale Turbopack chunks during dev)
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '0.0.0.0' || window.location.hostname === '127.0.0.1';
-    if (isLocalhost) return;
+    // Don't register on localhost to avoid stale cache during development
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return;
+
+    let refreshing = false;
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
 
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('/sw.js').catch(() => {
-        /* quiet: unsupported env, preview sandbox without SW scope, etc. */
-      });
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((reg) => {
+          // Check for updates periodically
+          setInterval(() => {
+            try { reg.update(); } catch {}
+          }, 60 * 60 * 1000);
+
+          // If new SW waiting, prompt user (simple toast via custom event)
+          if (reg.waiting) {
+            window.dispatchEvent(new CustomEvent('ff:toast', {
+              detail: { message: 'Update available — refresh to apply', action: 'Refresh', onAction: () => window.location.reload() }
+            }));
+          }
+
+          reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            if (!newWorker) return;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                window.dispatchEvent(new CustomEvent('ff:toast', {
+                  detail: { message: 'Update available — refresh to apply', action: 'Refresh', onAction: () => window.location.reload() }
+                }));
+              }
+            });
+          });
+
+          // Listen for messages (e.g. queue updates from SW)
+          navigator.serviceWorker.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'queue-changed') {
+              window.dispatchEvent(new Event('ff:queue-changed'));
+            }
+          });
+        })
+        .catch(() => { /* silent */ });
     });
   }, []);
 

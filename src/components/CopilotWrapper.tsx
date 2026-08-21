@@ -7,17 +7,21 @@ import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import AICopilot, { CopilotFab } from './AICopilot';
 import LoginScreen from './LoginScreen';
-import { Maximize2 } from 'lucide-react';
+import MobileBottomNav from './MobileBottomNav';
+import OfflineBanner from './OfflineBanner';
+import { Maximize2, Menu } from 'lucide-react';
 
 export default function CopilotWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { user, ready } = useAuth();
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [zen, setZen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isPortal = pathname?.startsWith('/portal');
   const isTracking = pathname?.startsWith('/tracking');
+  const isDriver = pathname?.startsWith('/driver');
 
-  // Open copilot via "/" shortcut (unless typing)
+  // Open copilot via "/" shortcut
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement | null;
@@ -32,11 +36,9 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
     return () => window.removeEventListener('keydown', onKey);
   }, [isPortal, isTracking, zen]);
 
-  // Watch zen mode (synced from Topbar via <html> class + event)
+  // Watch zen mode
   useEffect(() => {
-    const sync = () => {
-      setZen(document.documentElement.classList.contains('ff-zen'));
-    };
+    const sync = () => setZen(document.documentElement.classList.contains('ff-zen'));
     sync();
     window.addEventListener('ff:zen-changed', sync);
     window.addEventListener('storage', sync);
@@ -44,6 +46,13 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
       window.removeEventListener('ff:zen-changed', sync);
       window.removeEventListener('storage', sync);
     };
+  }, []);
+
+  // Listen for "open palette" event from mobile nav search
+  useEffect(() => {
+    const open = () => setCopilotOpen(true);
+    window.addEventListener('ff:open-palette', open);
+    return () => window.removeEventListener('ff:open-palette', open);
   }, []);
 
   const exitZen = async () => {
@@ -55,29 +64,54 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
     }
   };
 
-  // Public routes (no auth, no chrome)
+  // Public routes (no chrome)
   if (isPortal || isTracking) {
-    return <>{children}</>;
+    return (
+      <>
+        <OfflineBanner />
+        {children}
+      </>
+    );
   }
 
-  // While loading auth state, show a blank screen (avoids flash)
   if (!ready) {
     return <div className="min-h-screen bg-slate-50 dark:bg-[#0b1220]" />;
   }
 
-  // Not logged in -> show login screen
   if (!user) {
-    return <LoginScreen />;
+    return (
+      <>
+        <OfflineBanner />
+        <LoginScreen />
+      </>
+    );
   }
 
+  const showBottomNav = !zen && !isDriver; // driver page is its own mobile flow
+
   return (
-    <div className="flex min-h-screen">
+    <div className={`flex min-h-screen ${showBottomNav ? 'ff-has-bottom-nav' : ''}`}>
+      {/* Desktop sidebar */}
       {!zen && <Sidebar />}
+
+      {/* Mobile drawer sidebar */}
+      {!zen && <Sidebar mobileOpen={mobileMenuOpen} onCloseMobile={() => setMobileMenuOpen(false)} />}
+
       <div className="flex-1 flex flex-col min-w-0 relative">
-        {!zen && <Topbar />}
-        <main className={`flex-1 min-w-0 ${zen ? 'h-screen h-[100dvh] overflow-auto' : ''}`}>{children}</main>
+        {!zen && <Topbar onHamburgerClick={() => setMobileMenuOpen(true)} />}
+        <OfflineBanner />
+        <main className={`flex-1 min-w-0 ${zen ? 'h-screen h-[100dvh] overflow-auto' : ''}`}>
+          {children}
+        </main>
         {!zen && <CopilotFab onClick={() => setCopilotOpen(true)} />}
         {!zen && <AICopilot open={copilotOpen} onClose={() => setCopilotOpen(false)} />}
+
+        {!zen && showBottomNav && (
+          <MobileBottomNav
+            onOpenSearch={() => window.dispatchEvent(new Event('ff:open-palette'))}
+            onOpenMenu={() => setMobileMenuOpen(true)}
+          />
+        )}
 
         {zen && (
           <button

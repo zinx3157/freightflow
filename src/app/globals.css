@@ -8,6 +8,8 @@
   --brand: #0f4c81;
   --brand-dark: #0a3760;
   --brand-light: #1e6fb8;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 
 @theme inline {
@@ -24,6 +26,15 @@ html, body {
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+body {
+  padding-top: var(--safe-top);
 }
 
 .dark {
@@ -35,21 +46,42 @@ html, body {
   color-scheme: dark;
 }
 
-/* Global dark-mode surface overrides via @apply would be nicer but keeping it simple */
 .dark body { background: #0b1220; color: #e2e8f0; }
 
-/* Scrollbar */
-::-webkit-scrollbar { width: 10px; height: 10px; }
+/* Scrollbar — thinner on touch */
+::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 .dark ::-webkit-scrollbar-thumb { background: #334155; }
 .dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
+@media (pointer: coarse) {
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  /* Prevent iOS zoom on form inputs */
+  input, select, textarea { font-size: 16px !important; }
+  button { min-height: 40px; }
+}
+
 /* Focus */
 input:focus, select:focus, textarea:focus, button:focus-visible {
   outline: 2px solid var(--brand-light);
   outline-offset: 1px;
+}
+
+/* Tables: horizontal scroll wrapper for mobile */
+.ff-table-wrap { -webkit-overflow-scrolling: touch; overflow-x: auto; }
+.ff-table-wrap table { min-width: 640px; }
+
+/* Prevent text selection on chrome/buttons that feel like native UI */
+button, .no-select { -webkit-user-select: none; user-select: none; }
+
+/* Utility: truncate 2 lines */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* Subtle fade-in for command palette */
@@ -64,12 +96,66 @@ input:focus, select:focus, textarea:focus, button:focus-visible {
   50% { opacity: 0.6; transform: scale(1.25); }
 }
 
+/* Slide-in drawer (mobile sidebar) */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.ff-drawer-enter { animation: slideInLeft 0.25s ease-out both; }
+.ff-backdrop-enter { animation: fadeIn 0.2s ease-out both; }
+.ff-sheet-up { animation: slideUp 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.ff-fade-up { animation: slideUpFade 0.2s ease-out both; }
+
 /* Zen / Full-screen mode */
 html.ff-zen body { overflow: hidden; }
 html.ff-zen .flex.min-h-screen { height: 100vh; height: 100dvh; }
 html.ff-zen main { height: 100vh; height: 100dvh; overflow: auto; }
 html.ff-zen .sticky.top-0 { top: 0; }
-/* When browser fullscreen is active AND zen, use the whole viewport */
 html.ff-zen:fullscreen, html.ff-zen:fullscreen body, html.ff-zen:-webkit-full-screen, html.ff-zen:-webkit-full-screen body {
   width: 100vw; height: 100vh; height: 100dvh;
 }
+
+/* Mobile bottom tab bar spacing */
+@media (max-width: 767px) {
+  .ff-has-bottom-nav main { padding-bottom: calc(72px + var(--safe-bottom)); }
+  .ff-bottom-nav { padding-bottom: var(--safe-bottom); }
+}
+
+/* Offline indicator pulse */
+@keyframes offlinePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(244,63,94,0.6); }
+  50% { box-shadow: 0 0 0 8px rgba(244,63,94,0); }
+}
+.ff-offline-dot { animation: offlinePulse 1.6s infinite; }
+
+/* Mobile-friendly form inputs: bigger touch targets */
+@media (max-width: 640px) {
+  input[type="text"], input[type="email"], input[type="number"], input[type="date"], input[type="tel"], input[type="password"], select, textarea {
+    font-size: 16px !important;
+    min-height: 44px;
+  }
+  button, a.btn { min-height: 40px; }
+}
+
+/* Print-friendly — hide navigation chrome when printing docs */
+@media print {
+  aside, header, .ff-bottom-nav, .no-print { display: none !important; }
+  main { padding: 0 !important; }
+}
+
+/* Hide scrollbar on horizontal scroll strips while keeping scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

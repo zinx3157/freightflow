@@ -1,20 +1,28 @@
-/* FreightFlow Beta 8 — Service Worker
- * Offline shell + stale-while-revalidate for static assets.
+/* FreightFlow Service Worker — Beta 9
+ * Cache-first for static assets, network-first for HTML with offline shell fallback.
+ * Base-path aware (works at root AND under /freightflow/ on GitHub Pages).
  */
+const CACHE = 'freightflow-b9-v1';
+const RUNTIME = 'freightflow-b9-runtime';
 
-const CACHE = 'freightflow-b8-v2';
-const APP_SHELL = ['/'];
+const basePath = self.registration?.scope?.includes('/freightflow') ? '/freightflow' : '';
+const OFFLINE_URL = basePath + '/';
+const PRECACHE_URLS = [
+  basePath + '/',
+  basePath + '/manifest.json',
+  basePath + '/icon-192.svg',
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting())
+    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE_URLS)).then(() => self.skipWaiting())
   );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k !== CACHE && k !== RUNTIME).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
@@ -22,45 +30,61 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
+
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;
+  if (url.origin !== location.origin) return;
 
-  // Never cache service worker itself
-  if (url.pathname.endsWith('/sw.js')) {
-    event.respondWith(fetch(req).catch(() => caches.match('/')));
-    return;
-  }
-
-  // HTML navigations: network-first with cached-shell fallback (so clicking new routes works offline)
-  if (req.mode === 'navigate' ||
-      (req.headers.get('accept') || '').includes('text/html')) {
+  // HTML navigations: network-first with offline shell fallback
+  if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
     event.respondWith(
       fetch(req)
         .then((res) => {
           const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+          caches.open(RUNTIME).then((c) => c.put(req, copy)).catch(() => {});
           return res;
         })
         .catch(() =>
-          caches.match(req).then((r) => r || caches.match('/').then((root) => root || caches.match('/index.html')))
+          caches.match(req).then((cached) => cached || caches.match(OFFLINE_URL))
         )
     );
     return;
   }
 
-  // Static assets: cache-first with network update (stale-while-revalidate)
-  if (url.pathname.startsWith('/_next/') || /\.(?:js|css|woff2?|png|jpg|jpeg|gif|svg|ico|webp|json)$/i.test(url.pathname)) {
+  // Static assets (JS/CSS/fonts/images): stale-while-revalidate
+  if (/\.(js|css|woff2?|ttf|png|jpe?g|gif|svg|webp|ico|json)$/.test(url.pathname) ||
+      url.pathname.includes('/_next/')) {
     event.respondWith(
       caches.match(req).then((cached) => {
-        const network = fetch(req)
+        const fetchPromise = fetch(req)
           .then((res) => {
             const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+            caches.open(RUNTIME).then((c) => c.put(req, copy)).catch(() => {});
             return res;
           })
           .catch(() => cached);
-        return cached || network;
+        return cached || fetchPromise;
       })
+    );
+    return;
+  }
+
+  // Default: network-first with cache fallback
+  event.respondWith(
+    fetch(req)
+      .then((res) => {
+        const copy = res.clone();
+        caches.open(RUNTIME).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      })
+      .catch(() => caches.match(req))
+  );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'skipWaiting') self.skipWaiting();
+  if (event.data && event.data.type === 'queue-changed') {
+    self.clients.matchAll().then((clients) =>
+      clients.forEach((c) => c.postMessage({ type: 'queue-changed' }))
     );
   }
 });

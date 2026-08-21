@@ -1,6 +1,6 @@
 'use client';
 
-import { Bell, Plus, Search, LogOut, ChevronDown, Users, Maximize2, Minimize2, ExternalLink } from 'lucide-react';
+import { Bell, Plus, Search, LogOut, ChevronDown, Users, Maximize2, Minimize2, ExternalLink, Menu, Wifi } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from './ui';
@@ -33,7 +33,7 @@ const PAGE_META: Record<string, { title: string; subtitle?: string; newHref?: st
   '/portal': { title: 'Customer Portal', subtitle: 'Live tracking for your clients' },
 };
 
-export default function Topbar() {
+export default function Topbar({ onHamburgerClick }: { onHamburgerClick?: () => void } = {}) {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [issueCount, setIssueCount] = useState(0);
@@ -53,6 +53,13 @@ export default function Topbar() {
     }
     document.addEventListener('fullscreenchange', onFs);
     return () => document.removeEventListener('fullscreenchange', onFs);
+  }, []);
+
+  // Open notifications from mobile bottom nav
+  useEffect(() => {
+    const openNotifs = () => { setNotifOpen(true); setPaletteOpen(false); };
+    window.addEventListener('ff:open-notifs', openNotifs);
+    return () => window.removeEventListener('ff:open-notifs', openNotifs);
   }, []);
 
   // Persist zen mode across reloads
@@ -155,12 +162,21 @@ export default function Topbar() {
 
   return (
     <>
-      <header className="h-16 bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 px-6 flex items-center justify-between gap-4 sticky top-0 z-30 backdrop-blur">
-        <div>
-          <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{meta.title}</h1>
-          {meta.subtitle && <p className="text-xs text-slate-500 dark:text-slate-400">{meta.subtitle}</p>}
+      <header className="h-16 bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 flex items-center justify-between gap-2 sm:gap-4 sticky top-0 z-30 backdrop-blur">
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            onClick={onHamburgerClick}
+            className="md:hidden w-10 h-10 -ml-1 rounded-lg flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 shrink-0"
+            aria-label="Open menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="min-w-0">
+            <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight truncate">{meta.title}</h1>
+            {meta.subtitle && <p className="hidden sm:block text-xs text-slate-500 dark:text-slate-400 truncate">{meta.subtitle}</p>}
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
           <button
             onClick={() => setPaletteOpen(true)}
             className="hidden md:flex items-center gap-2 pl-3 pr-2 py-2 text-sm text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-700 w-80 transition-colors"
@@ -223,11 +239,11 @@ export default function Topbar() {
           </button>
 
           {meta.newHref ? (
-            <Button onClick={() => router.push(meta.newHref!)}>
+            <Button onClick={() => router.push(meta.newHref!)} className="hidden sm:inline-flex">
               <Plus className="w-4 h-4" /> {meta.newLabel || 'New'}
             </Button>
           ) : (
-            <Button onClick={() => router.push('/shipments?new=1')}>
+            <Button onClick={() => router.push('/shipments?new=1')} className="hidden sm:inline-flex">
               <Plus className="w-4 h-4" /> New Shipment
             </Button>
           )}

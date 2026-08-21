@@ -1,31 +1,48 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { X, Flame, Rocket } from 'lucide-react';
+import { X, Flame, Rocket, Smartphone, Wifi, WifiOff } from 'lucide-react';
 
 export default function BetaBanner() {
   const [hidden, setHidden] = useState(true);
   const [zen, setZen] = useState(false);
+  const [online, setOnline] = useState(true);
   useEffect(() => {
-    const v = localStorage.getItem('ff_beta_banner_hide');
+    const v = localStorage.getItem('ff_beta_banner_hide_v9');
     if (v !== '1') setHidden(false);
     const sync = () => setZen(document.documentElement.classList.contains('ff-zen'));
     sync();
     window.addEventListener('ff:zen-changed', sync);
-    return () => window.removeEventListener('ff:zen-changed', sync);
+    setOnline(navigator.onLine);
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => {
+      window.removeEventListener('ff:zen-changed', sync);
+      window.removeEventListener('online', on);
+      window.removeEventListener('offline', off);
+    };
   }, []);
   if (hidden || zen) return null;
   return (
-    <div className="bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 text-white text-sm py-2 px-4 flex items-center justify-center gap-3 relative z-40">
-      <Rocket className="w-4 h-4 animate-pulse" />
-      <span className="font-semibold">FreightFlow BETA 7</span>
+    <div className="bg-gradient-to-r from-brand via-indigo-600 to-violet-600 text-white text-xs sm:text-sm py-2 px-3 sm:px-4 flex items-center justify-center gap-2 sm:gap-3 relative z-40">
+      <Rocket className="w-4 h-4 animate-pulse shrink-0" />
+      <span className="font-bold shrink-0">FreightFlow BETA 9</span>
       <span className="hidden sm:inline text-white/90">
-        — Try WMS, multi-leg routing, two-way inbox, driver POD app, ASYCUDA XML export, customer portal chat, yard management, EN/FR/MG language toggle
+        — Full mobile support · offline PWA · tap-to-move yard · responsive tables · approval reminders · OOBO hardened
       </span>
-      <span className="sm:hidden text-white/90">WMS · Inbox · Driver POD · Yard · FR/MG</span>
+      <span className="sm:hidden text-white/90 flex items-center gap-1">
+        <Smartphone className="w-3 h-3" /> Mobile-ready
+      </span>
+      {!online && (
+        <span className="inline-flex items-center gap-1 bg-rose-500/80 text-white px-2 py-0.5 rounded-full text-[10px] font-bold animate-pulse">
+          <WifiOff className="w-3 h-3" /> OFFLINE
+        </span>
+      )}
       <button
-        onClick={() => { setHidden(true); localStorage.setItem('ff_beta_banner_hide', '1'); }}
-        className="ml-2 hover:bg-white/20 rounded p-1"
+        onClick={() => { setHidden(true); localStorage.setItem('ff_beta_banner_hide_v9', '1'); }}
+        className="ml-1 hover:bg-white/20 rounded p-1 shrink-0"
         title="Dismiss"
       >
         <X className="w-4 h-4" />

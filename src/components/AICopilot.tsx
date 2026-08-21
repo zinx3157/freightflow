@@ -469,8 +469,9 @@ export function CopilotFab({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-6 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-600/30 hover:shadow-xl hover:scale-105 transition-all flex items-center justify-center group"
+      className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-600/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center group"
       title="FreightFlow AI (press /)"
+      style={{ marginBottom: 'var(--safe-bottom)' }}
     >
       <Sparkles className="w-6 h-6 group-hover:scale-110 transition" />
       <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-emerald-400 border-2 border-white dark:border-slate-900 text-[10px] font-bold flex items-center justify-center text-emerald-900">AI</span>

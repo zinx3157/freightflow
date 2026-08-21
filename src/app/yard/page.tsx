@@ -36,6 +36,34 @@ export default function YardPage() {
   const [filter, setFilter] = useState<'all'|'occupied'|'reefer'|'dg'|'longdwell'|'empty'>('all');
   const [dragFrom, setDragFrom] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+
+  // Tap-to-select-then-tap-target for mobile (and desktop keyboard)
+  const onSlotClick = (code: string) => {
+    const slot = slots.find(s => s.code === code);
+    if (!slot) return;
+    if (!selectedSlot) {
+      if (slot.container) {
+        setSelectedSlot(code);
+        window.dispatchEvent(new CustomEvent('ff:toast', { detail: { message: `Selected ${slot.container}. Tap an empty slot to move it.` } }));
+      }
+      return;
+    }
+    if (selectedSlot === code) {
+      setSelectedSlot(null);
+      return;
+    }
+    // Attempt move
+    const src = slots.find(s => s.code === selectedSlot);
+    if (!src?.container) { setSelectedSlot(null); return; }
+    if (slot.container) {
+      window.dispatchEvent(new CustomEvent('ff:toast', { detail: { message: 'Slot occupied — tap an empty slot.', kind: 'error' } }));
+      return;
+    }
+    db.moveYardSlot(selectedSlot, code);
+    setSelectedSlot(null);
+    refresh();
+  };
 
   const refresh = () => {
     setSlots(db.allYardSlots());
@@ -99,7 +127,13 @@ export default function YardPage() {
 
   return (
     <PageShell title="Container Yard (Toamasina)" subtitle="Live yard plan, gate moves & dwell-time monitoring">
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
+        {selectedSlot && (
+          <div className="bg-brand/10 border border-brand/30 text-brand rounded-lg px-4 py-2 text-sm flex items-center justify-between flex-wrap gap-2">
+            <span>📦 {slots.find(s => s.code === selectedSlot)?.container} selected — tap an <b>empty slot</b> to move, or tap the container again to cancel.</span>
+            <Button size="sm" variant="outline" onClick={() => setSelectedSlot(null)}>Cancel</Button>
+          </div>
+        )}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <StatTile icon={<Grid3x3 className="w-5 h-5" />} label="Total Slots" value={stats.total} color="slate" />
           <StatTile icon={<PackageCheck className="w-5 h-5" />} label="Occupied" value={stats.occupied} color="blue" />
@@ -122,9 +156,9 @@ export default function YardPage() {
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <Card className="p-5 xl:col-span-2">
-            <h3 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+            <h3 className="font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2 flex-wrap">
               <Grid3x3 className="w-4 h-4 text-brand" /> Yard Plan
-              <span className="text-xs font-normal text-slate-500 ml-1">(drag a container to an empty slot to yard-shift)</span>
+              <span className="text-xs font-normal text-slate-500">(drag on desktop · tap-to-select on mobile)</span>
             </h3>
             <div className="space-y-1.5 overflow-x-auto">
               {Object.keys(byRow).sort().map(row => (
@@ -134,6 +168,8 @@ export default function YardPage() {
                     {byRow[row].sort((a,b) => parseInt(a.code.split('-')[1]) - parseInt(b.code.split('-')[1])).map(s => {
                       const isDragSource = dragFrom === s.code;
                       const isDragTarget = dragOver === s.code && !s.container && dragFrom && dragFrom !== s.code;
+                      const isSelected = selectedSlot === s.code;
+                      const isMoveTarget = selectedSlot && !s.container && selectedSlot !== s.code;
                       return (
                       <div
                         key={s.code}
@@ -143,8 +179,11 @@ export default function YardPage() {
                         onDragLeave={onDragLeave}
                         onDrop={onDrop(s.code)}
                         onDragEnd={() => { setDragFrom(null); setDragOver(null); }}
-                        title={`${s.code} — ${s.container || 'EMPTY'} (${s.zone}${s.dwellHours?` · ${s.dwellHours}h dwell`:''})${s.container?' — drag to shift':''}`}
-                        className={`w-12 h-10 rounded-md border flex flex-col items-center justify-center text-[9px] font-mono font-bold cursor-pointer transition-all hover:scale-110 hover:shadow-md select-none ${s.container ? ZONE_COLORS[s.zone] : 'bg-slate-50 dark:bg-slate-800/50 border-dashed border-slate-300 dark:border-slate-700 text-slate-300 dark:text-slate-600'} ${s.container && (s.dwellHours||0) > 72 ? 'ring-2 ring-rose-400 animate-pulse' : ''} ${isDragSource ? 'opacity-40 scale-90' : ''} ${isDragTarget ? 'ring-2 ring-brand bg-brand/10 scale-110' : ''}`}
+                        onClick={() => onSlotClick(s.code)}
+                        role="button"
+                        aria-label={`${s.code} ${s.container || 'empty'}`}
+                        title={`${s.code} — ${s.container || 'EMPTY'} (${s.zone}${s.dwellHours?` · ${s.dwellHours}h dwell`:''})${s.container?' — tap/drag to shift':''}`}
+                        className={`w-12 h-10 sm:w-14 sm:h-12 rounded-md border flex flex-col items-center justify-center text-[9px] sm:text-[10px] font-mono font-bold cursor-pointer transition-all hover:scale-110 hover:shadow-md select-none active:scale-95 ${s.container ? ZONE_COLORS[s.zone] : 'bg-slate-50 dark:bg-slate-800/50 border-dashed border-slate-300 dark:border-slate-700 text-slate-300 dark:text-slate-600'} ${s.container && (s.dwellHours||0) > 72 ? 'ring-2 ring-rose-400 animate-pulse' : ''} ${isDragSource || isSelected ? 'opacity-60 scale-90 ring-2 ring-brand' : ''} ${isDragTarget || isMoveTarget ? 'ring-2 ring-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 scale-110' : ''}`}
                       >
                         <div>{s.code.split('-')[1]}</div>
                         {s.container && <div className="text-[8px] opacity-80 leading-none">{s.container.slice(0,4)}</div>}

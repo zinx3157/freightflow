@@ -19,15 +19,12 @@ else
     echo "==> node_modules present — skipping npm install"
 fi
 
-# 2. Kill any existing process on port 3000 (stale server from prior session)
-EXISTING_PID=$(lsof -ti tcp:3000 2>/dev/null || true)
-if [ -n "$EXISTING_PID" ]; then
-    echo "==> Killing stale process on :3000 (PID $EXISTING_PID)"
-    kill -9 $EXISTING_PID 2>/dev/null || true
-    sleep 1
-fi
+# 2. Kill any existing process on port 3000
+fuser -k 3000/tcp 2>/dev/null || true
+pkill -f "next dev" 2>/dev/null || true
+sleep 1
 
-# 3. Launch the Next.js dev server (Turbopack) bound to all interfaces
+# 3. Launch the Next.js dev server bound to all interfaces
 echo "==> Launching Next.js dev server…"
 echo ""
 exec npm run dev -- --hostname 0.0.0.0 --port 3000
