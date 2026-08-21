@@ -1,11 +1,16 @@
 import type { NextConfig } from "next";
 
+// Set NEXT_PUBLIC_BASE_PATH=/freightflow when deploying to GitHub Pages
+// (project sites live at <user>.github.io/<repo>/). Leave unset for root hosting
+// (localhost:3000, Vercel, Netlify, Cloudflare Pages, custom domain, etc.).
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const nextConfig: NextConfig = {
   output: "export",
   images: { unoptimized: true },
   trailingSlash: true,
-  // Allow the e2b Arena preview proxy to embed the dev server in iframes
-  // The wildcard covers any sandbox id preview host (*.e2b.app)
+  ...(basePath ? { basePath, assetPrefix: basePath + "/" } : {}),
+  // Allow Arena/e2b preview proxy to embed the dev server in iframes
   allowedDevOrigins: [
     "*.e2b.app",
     "localhost:3000",
