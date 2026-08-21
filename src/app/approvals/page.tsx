@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import PageShell from '@/components/PageShell';
-import { Card, Button, Badge, Modal, Field, Input, Textarea } from '@/components/ui';
+import { Card, Button, Badge, Modal, Field, Input } from '@/components/ui';
 import { db } from '@/lib/store';
 import type { DocApproval } from '@/lib/types';
 import { useAuth } from '@/components/AuthProvider';
 import {
   FileCheck2, Clock, CheckCircle2, XCircle, AlertTriangle, Plus,
-  Shield, FileSignature, Award, FileText, Calendar, User
+  Shield, FileSignature, Award, User, Calendar
 } from 'lucide-react';
 import { formatDate, formatDateTime } from '@/lib/utils';
 
@@ -21,7 +21,16 @@ export default function ApprovalsPage() {
   const [showNew, setShowNew] = useState(false);
 
   const refresh = () => setItems(db.allApprovals());
-  useEffect(() => { refresh(); window.addEventListener('ff:data-changed', refresh); return () => window.removeEventListener('ff:data-changed', refresh); }, []);
+  useEffect(() => {
+    refresh();
+    const onChange = () => refresh();
+    window.addEventListener('ff:data-changed', onChange);
+    window.addEventListener('storage', onChange);
+    return () => {
+      window.removeEventListener('ff:data-changed', onChange);
+      window.removeEventListener('storage', onChange);
+    };
+  }, []);
 
   const today = new Date();
   const in30 = new Date(Date.now()+30*86400000);
@@ -49,8 +58,8 @@ export default function ApprovalsPage() {
   };
 
   const myName = user?.name || 'Current User';
-  const myReview = (a: DocApproval) => a.reviewers.find(r => r.name === myName);
-  const iAmReviewer = (a: DocApproval) => a.status === 'pending' && !!myReview(a) && myReview(a)!.status === 'pending';
+  const iAmReviewer = (a: DocApproval) =>
+    a.status === 'pending' && !!a.reviewers.find(r => r.name === myName && r.status === 'pending');
 
   const decide = (id: string, decision: 'approved'|'rejected', comment?: string) => {
     db.decideApproval(id, myName, decision, comment);
@@ -87,75 +96,90 @@ export default function ApprovalsPage() {
               No {filter === 'all' ? '' : filter} approvals
             </Card>
           )}
-          {filtered.map(a => {
-            const expiringSoon = a.expiryDate && new Date(a.expiryDate) < in30;
-            const expired = a.expiryDate && new Date(a.expiryDate) < today;
-            const mine = iAmReviewer(a);
-            const [comment, setComment] = useState('');
-            return (
-              <Card key={a.id} className={`p-4 ${mine ? 'ring-2 ring-brand/40' : ''} ${expired ? 'border-rose-300 dark:border-rose-800' : ''}`}>
-                <div className="flex items-start gap-4">
-                  <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${
-                    a.status === 'approved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
-                    : a.status === 'rejected' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
-                    : expiringSoon ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
-                    : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
-                  }`}>
-                    {a.status === 'approved' ? <CheckCircle2 className="w-5 h-5"/>
-                     : a.status === 'rejected' ? <XCircle className="w-5 h-5"/>
-                     : <Clock className="w-5 h-5"/>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-3 flex-wrap">
-                      <div>
-                        <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
-                          {a.docName}
-                          <StatusBadge status={a.status} />
-                          {expired && <Badge color="rose">EXPIRED</Badge>}
-                          {expiringSoon && !expired && <Badge color="amber">Expires {formatDate(a.expiryDate!)}</Badge>}
-                          {mine && <Badge color="blue">Awaiting your review</Badge>}
-                        </div>
-                        <div className="flex items-center gap-3 flex-wrap text-xs text-slate-500 mt-1">
-                          <span className="flex items-center gap-1"><Shield className="w-3 h-3"/>{a.category}</span>
-                          <span className="flex items-center gap-1"><User className="w-3 h-3"/>Requested by {a.requestedBy}</span>
-                          <span className="flex items-center gap-1"><Calendar className="w-3 h-3"/>{formatDateTime(a.requestedAt)}</span>
-                          {a.expiryDate && <span className="flex items-center gap-1"><Award className="w-3 h-3"/>Expires {formatDate(a.expiryDate)}</span>}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {a.reviewers.map((r,i) => (
-                        <div key={i} className={`px-2.5 py-1 rounded-lg text-xs flex items-center gap-1.5 border ${
-                          r.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800' :
-                          r.status === 'rejected' ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800' :
-                          'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
-                        }`}>
-                          {r.status === 'approved' ? <CheckCircle2 className="w-3 h-3"/> : r.status === 'rejected' ? <XCircle className="w-3 h-3"/> : <Clock className="w-3 h-3"/>}
-                          <span className="font-medium">{r.name}</span>
-                          <span className="opacity-70">· {r.role}</span>
-                          {r.comment && <span className="opacity-80 italic">"{r.comment}"</span>}
-                        </div>
-                      ))}
-                    </div>
-
-                    {mine && (
-                      <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2 flex-wrap">
-                        <Input placeholder="Optional comment..." value={comment} onChange={e => setComment(e.target.value)} className="flex-1 min-w-[200px]" />
-                        <Button onClick={() => decide(a.id, 'approved', comment || undefined)}><CheckCircle2 className="w-4 h-4"/> Approve</Button>
-                        <Button variant="danger" onClick={() => decide(a.id, 'rejected', comment || undefined)}><XCircle className="w-4 h-4"/> Reject</Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+          {filtered.map(a => (
+            <ApprovalRow key={a.id} approval={a} myName={myName} mine={iAmReviewer(a)} onDecide={decide} />
+          ))}
         </div>
       </div>
 
       {showNew && <NewApprovalModal onClose={() => setShowNew(false)} onCreated={() => { setShowNew(false); refresh(); }} />}
     </PageShell>
+  );
+}
+
+// Extracted as its own component so the comment-input useState follows Rules of Hooks
+// (one useState per row, not useState inside a loop).
+function ApprovalRow({
+  approval: a, myName, mine, onDecide,
+}: {
+  approval: DocApproval;
+  myName: string;
+  mine: boolean;
+  onDecide: (id: string, decision: 'approved'|'rejected', comment?: string) => void;
+}) {
+  const today = new Date();
+  const in30 = new Date(Date.now()+30*86400000);
+  const expiringSoon = !!a.expiryDate && new Date(a.expiryDate) < in30;
+  const expired = !!a.expiryDate && new Date(a.expiryDate) < today;
+  const [comment, setComment] = useState('');
+
+  return (
+    <Card className={`p-4 ${mine ? 'ring-2 ring-brand/40' : ''} ${expired ? 'border-rose-300 dark:border-rose-800' : ''}`}>
+      <div className="flex items-start gap-4">
+        <div className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${
+          a.status === 'approved' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300'
+          : a.status === 'rejected' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300'
+          : expiringSoon ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+          : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+        }`}>
+          {a.status === 'approved' ? <CheckCircle2 className="w-5 h-5"/>
+           : a.status === 'rejected' ? <XCircle className="w-5 h-5"/>
+           : <Clock className="w-5 h-5"/>}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div>
+              <div className="font-semibold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
+                {a.docName}
+                <StatusBadge status={a.status} />
+                {expired && <Badge color="rose">EXPIRED</Badge>}
+                {expiringSoon && !expired && <Badge color="amber">Expires {formatDate(a.expiryDate!)}</Badge>}
+                {mine && <Badge color="blue">Awaiting your review</Badge>}
+              </div>
+              <div className="flex items-center gap-3 flex-wrap text-xs text-slate-500 mt-1">
+                <span className="flex items-center gap-1"><Shield className="w-3 h-3"/>{a.category}</span>
+                <span className="flex items-center gap-1"><User className="w-3 h-3"/>Requested by {a.requestedBy}</span>
+                <span className="flex items-center gap-1"><Calendar className="w-3 h-3"/>{formatDateTime(a.requestedAt)}</span>
+                {a.expiryDate && <span className="flex items-center gap-1"><Award className="w-3 h-3"/>Expires {formatDate(a.expiryDate)}</span>}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            {a.reviewers.map((r,i) => (
+              <div key={i} className={`px-2.5 py-1 rounded-lg text-xs flex items-center gap-1.5 border ${
+                r.status === 'approved' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-800' :
+                r.status === 'rejected' ? 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800' :
+                'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+              }`}>
+                {r.status === 'approved' ? <CheckCircle2 className="w-3 h-3"/> : r.status === 'rejected' ? <XCircle className="w-3 h-3"/> : <Clock className="w-3 h-3"/>}
+                <span className="font-medium">{r.name}</span>
+                <span className="opacity-70">· {r.role}</span>
+                {r.comment && <span className="opacity-80 italic">"{r.comment}"</span>}
+              </div>
+            ))}
+          </div>
+
+          {mine && (
+            <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700 flex items-center gap-2 flex-wrap">
+              <Input placeholder="Optional comment..." value={comment} onChange={e => setComment(e.target.value)} className="flex-1 min-w-[200px]" />
+              <Button onClick={() => { onDecide(a.id, 'approved', comment || undefined); setComment(''); }}><CheckCircle2 className="w-4 h-4"/> Approve</Button>
+              <Button variant="danger" onClick={() => { onDecide(a.id, 'rejected', comment || undefined); setComment(''); }}><XCircle className="w-4 h-4"/> Reject</Button>
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -195,7 +219,7 @@ function NewApprovalModal({onClose,onCreated}:{onClose:()=>void;onCreated:()=>vo
       docName, category,
       requestedBy: 'Current User',
       requestedAt: new Date().toISOString(),
-      reviewers: reviewers.split(',').map(s => ({ name: s.trim(), role: 'Reviewer', status: 'pending' as const })),
+      reviewers: reviewers.split(',').map(s => ({ name: s.trim(), role: 'Reviewer', status: 'pending' as const })).filter(r => r.name),
       expiryDate: expiry || undefined,
     });
     onCreated();
