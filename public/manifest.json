@@ -1,0 +1,16 @@
+{
+  "name": "FreightFlow Logistics OS",
+  "short_name": "FreightFlow",
+  "description": "Modern freight forwarding operations — air/sea/customs/trucking/WMS/POD",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f4c81",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,"
+    }
+  ],
+  "categories": ["business", "productivity", "travel"]
+}
