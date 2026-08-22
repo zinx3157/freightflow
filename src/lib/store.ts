@@ -146,13 +146,13 @@ function seed(): DB {
   ];
 
   const quotes: Quote[] = [
-    { id: uid('q_'), number: 'Q-2026-0201', customerId: customers[1].id, customerName: 'Global Spice Exporters', customerEmail: 'hanta@globalspice.mg', mode: 'air', direction: 'export', origin: 'Antananarivo, MG', destination: 'Tokyo, JP', weight: 350, volume: 2.0, commodity: 'Premium Vanilla', status: 'sent' as any, freightRate: 5200, customsFee: 650, truckingFee: 280, total: 6130, validUntil: days(14), createdAt: days(-2), sentAt: daysAgoIso(2), openedAt: hoursAgoIso(20) },
-    { id: uid('q_'), number: 'Q-2026-0202', customerId: customers[4].id, customerName: 'Europe Pharma Group', customerEmail: 'h.mueller@europepharma.de', mode: 'air', direction: 'import', origin: 'Frankfurt, DE', destination: 'Antananarivo, MG', weight: 820, volume: 4.5, commodity: 'Vaccines (Cold Chain)', status: 'accepted', freightRate: 8900, customsFee: 1100, truckingFee: 450, total: 10450, validUntil: days(10), createdAt: days(-8), sentAt: daysAgoIso(8), openedAt: daysAgoIso(7) },
-    { id: uid('q_'), number: 'Q-2026-0203', customerId: customers[2].id, customerName: 'Mada Imports SARL', customerEmail: 'jp@madaimports.mg', mode: 'sea', direction: 'import', origin: 'Istanbul, TR', destination: 'Toamasina, MG', weight: 18000, volume: 42, commodity: 'Construction Materials', status: 'pending', freightRate: 12400, customsFee: 2800, truckingFee: 1950, total: 17150, validUntil: days(21), createdAt: days(-1) },
+    { id: uid('q_'), number: 'Q-2026-0201', customerId: customers[1].id, customerName: 'Global Spice Exporters', customerEmail: 'hanta@globalspice.mg', mode: 'air', direction: 'export', origin: 'Antananarivo, MG', destination: 'Tokyo, JP', weight: 350, volume: 2.0, commodity: 'Premium Vanilla', status: 'sent' as any, freightRate: 5200, customsFee: 650, truckingFee: 280, total: 6130, currency: 'USD', validUntil: days(14), createdAt: days(-2), sentAt: daysAgoIso(2), openedAt: hoursAgoIso(20) },
+    { id: uid('q_'), number: 'Q-2026-0202', customerId: customers[4].id, customerName: 'Europe Pharma Group', customerEmail: 'h.mueller@europepharma.de', mode: 'air', direction: 'import', origin: 'Frankfurt, DE', destination: 'Antananarivo, MG', weight: 820, volume: 4.5, commodity: 'Vaccines (Cold Chain)', status: 'accepted', freightRate: 8900, customsFee: 1100, truckingFee: 450, total: 10450, currency: 'USD', validUntil: days(10), createdAt: days(-8), sentAt: daysAgoIso(8), openedAt: daysAgoIso(7) },
+    { id: uid('q_'), number: 'Q-2026-0203', customerId: customers[2].id, customerName: 'Mada Imports SARL', customerEmail: 'jp@madaimports.mg', mode: 'sea', direction: 'import', origin: 'Istanbul, TR', destination: 'Toamasina, MG', weight: 18000, volume: 42, commodity: 'Construction Materials', status: 'pending', freightRate: 12400, customsFee: 2800, truckingFee: 1950, total: 17150, currency: 'USD', validUntil: days(21), createdAt: days(-1) },
     // One more pending quote for Indian Ocean Textiles to show in portal
-    { id: uid('q_'), number: 'Q-2026-0204', customerId: customers[0].id, customerName: 'Indian Ocean Textiles Ltd', customerEmail: 'rakoto@iotextiles.mg', mode: 'sea', direction: 'export', origin: 'Toamasina, MG', destination: 'Rotterdam, NL', weight: 14000, volume: 32, commodity: 'Cotton Textiles', status: 'sent' as any, freightRate: 9800, customsFee: 1200, truckingFee: 1600, total: 12600, validUntil: days(18), createdAt: days(-3), sentAt: daysAgoIso(3), openedAt: daysAgoIso(2) },
+    { id: uid('q_'), number: 'Q-2026-0204', customerId: customers[0].id, customerName: 'Indian Ocean Textiles Ltd', customerEmail: 'rakoto@iotextiles.mg', mode: 'sea', direction: 'export', origin: 'Toamasina, MG', destination: 'Rotterdam, NL', weight: 14000, volume: 32, commodity: 'Cotton Textiles', status: 'sent' as any, freightRate: 9800, customsFee: 1200, truckingFee: 1600, total: 12600, currency: 'USD', validUntil: days(18), createdAt: days(-3), sentAt: daysAgoIso(3), openedAt: daysAgoIso(2) },
     // A Mauritius Trading quote
-    { id: uid('q_'), number: 'Q-2026-0205', customerId: customers[3].id, customerName: 'Mauritius Trading Co.', customerEmail: 'priya@mauritiustrading.mu', mode: 'air', direction: 'import', origin: 'Mauritius, MU', destination: 'Antananarivo, MG', weight: 220, volume: 1.4, commodity: 'Textile Samples', status: 'pending', freightRate: 1450, customsFee: 280, truckingFee: 180, total: 1910, validUntil: days(12), createdAt: hoursAgoIso(8) },
+    { id: uid('q_'), number: 'Q-2026-0205', customerId: customers[3].id, customerName: 'Mauritius Trading Co.', customerEmail: 'priya@mauritiustrading.mu', mode: 'air', direction: 'import', origin: 'Mauritius, MU', destination: 'Antananarivo, MG', weight: 220, volume: 1.4, commodity: 'Textile Samples', status: 'pending', freightRate: 1450, customsFee: 280, truckingFee: 180, total: 1910, currency: 'USD', validUntil: days(12), createdAt: hoursAgoIso(8) },
   ] as Quote[];
 
   // Container/package manifests for existing shipments
@@ -201,7 +201,10 @@ function seed(): DB {
     { id: uid('d_'), name: 'Pharma_ColdChain_Certificate.pdf', category: 'other', sizeBytes: 122880, mimeType: 'application/pdf', relatedType: 'shipment', relatedId: shipments[1].id, uploadedBy: 'Lina Ratsimba', uploadedAt: daysAgoIso(3) },
     { id: uid('d_'), name: 'DGD_UN3480_FRT0003.pdf', category: 'dgd', sizeBytes: 102400, mimeType: 'application/pdf', relatedType: 'shipment', relatedId: shipments[2].id, uploadedBy: 'Lina Ratsimba', uploadedAt: daysAgoIso(24) },
     { id: uid('d_'), name: 'INV-2026-0101.pdf', category: 'invoice_attachment', sizeBytes: 153600, mimeType: 'application/pdf', relatedType: 'invoice', relatedId: invoices[0].id, uploadedBy: 'Hery Lalao', uploadedAt: daysAgoIso(12) },
+    { id: uid('d_'), name: 'INV-2026-0104_Proforma_Textiles_Rotterdam.pdf', category: 'invoice_attachment', sizeBytes: 148480, mimeType: 'application/pdf', relatedType: 'invoice', relatedId: invoices[3].id, uploadedBy: 'Hery Lalao', uploadedAt: daysAgoIso(5) },
     { id: uid('d_'), name: 'Q-2026-0201_Vanilla_Tokyo.pdf', category: 'quote_attachment', sizeBytes: 133120, mimeType: 'application/pdf', relatedType: 'quote', relatedId: quotes[0].id, uploadedBy: 'Hery Lalao', uploadedAt: daysAgoIso(2) },
+    { id: uid('d_'), name: 'Q-2026-0204_Cotton_Rotterdam.pdf', category: 'quote_attachment', sizeBytes: 128000, mimeType: 'application/pdf', relatedType: 'quote', relatedId: quotes[3].id, uploadedBy: 'Hery Lalao', uploadedAt: daysAgoIso(3) },
+    { id: uid('d_'), name: 'Pharma_Handling_Procedure_v2.pdf', category: 'other', sizeBytes: 245760, mimeType: 'application/pdf', relatedType: 'shipment', relatedId: shipments[1].id, uploadedBy: 'Voahangy R.', uploadedAt: daysAgoIso(4) },
   ];
 
   // Rate cards
@@ -1285,7 +1288,7 @@ export const db = {
     const d = load();
     const cust = d.customers.find(c => c.id === cid);
     if (!cust) return [];
-    return d.quotes.filter(q => q.customerName === cust.name).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+    return d.quotes.filter(q => q.customerId === cid || q.customerName === cust.name).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
   },
   customerInvoices: (cid: string) => load().invoices.filter(i => i.customerId === cid).sort((a,b) => b.issueDate.localeCompare(a.issueDate)),
   customerDocs: (cid: string) => {
