@@ -27,8 +27,9 @@ import {
   Quote,
 } from 'lucide-react';
 import { formatDate, formatDateTime, statusColor, titleCase, daysFromNow, formatMoney } from '@/lib/utils';
-import { generateShipmentBL, downloadBlob } from '@/lib/documents';
+import { generateShipmentBL, downloadBlob, previewBlob } from '@/lib/documents';
 import { withBasePath } from '@/lib/basePath';
+import LiveTrackingPanel from '@/components/LiveTrackingPanel';
 
 const STAGES: { key: Shipment['status']; label: string; icon: React.ReactNode }[] = [
   { key: 'quoted', label: 'Quoted', icon: <CircleDot className="w-4 h-4" /> },
@@ -190,8 +191,11 @@ function ShipmentTracker({ s, portalToken }: { s: Shipment; portalToken: string 
             <div className="text-slate-600 dark:text-slate-300 mt-1">{s.commodity} · {s.carrier} {s.vesselOrFlight}</div>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => previewBlob(generateShipmentBL(s), `${s.reference}_${s.mode === 'air' ? 'AWB' : 'BL'}.pdf`)}>
+              <FileCheck className="w-3.5 h-3.5" /> Preview {s.mode === 'air' ? 'AWB' : 'B/L'}
+            </Button>
             <Button variant="outline" size="sm" onClick={() => downloadBlob(generateShipmentBL(s), `${s.reference}_${s.mode === 'air' ? 'AWB' : 'BL'}.pdf`)}>
-              <Download className="w-3.5 h-3.5" /> Download {s.mode === 'air' ? 'AWB' : 'B/L'}
+              <Download className="w-3.5 h-3.5" /> Download
             </Button>
             <Button size="sm" onClick={() => window.open(withBasePath(`/portal/?t=${portalToken}`), '_blank')}>
               <ExternalLink className="w-3.5 h-3.5" /> Open customer portal
@@ -225,6 +229,8 @@ function ShipmentTracker({ s, portalToken }: { s: Shipment; portalToken: string 
           </div>
         </div>
       </Card>
+
+      <LiveTrackingPanel shipment={s} />
 
       <Card className="p-6">
         <h3 className="font-semibold text-slate-900 dark:text-white mb-5">Shipment Journey</h3>

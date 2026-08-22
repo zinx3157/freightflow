@@ -775,6 +775,25 @@ export function downloadBlob(blob: Blob, filename: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
+export function previewBlob(blob: Blob, title = 'Document preview') {
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank', 'noopener,noreferrer');
+  if (!win) {
+    const frame = document.createElement('iframe');
+    frame.src = url;
+    frame.title = title;
+    frame.style.position = 'fixed';
+    frame.style.inset = '0';
+    frame.style.zIndex = '9999';
+    frame.style.width = '100vw';
+    frame.style.height = '100dvh';
+    frame.style.background = 'white';
+    document.body.appendChild(frame);
+  } else {
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }
+}
+
 // format number helper for docs
 function fmtNum(n: number, d: number) {
   return new Intl.NumberFormat('en-US', { minimumFractionDigits: n % 1 ? d : 0, maximumFractionDigits: d }).format(n);

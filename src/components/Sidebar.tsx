@@ -23,6 +23,7 @@ import {
   Smartphone,
   Grid3x3,
   FileCheck2,
+  FolderOpen,
   X,
   ChevronRight,
   Sparkles,
@@ -87,6 +88,7 @@ const SECTIONS: NavSection[] = [
     titleKey: 'sec_comm',
     items: [
       { href: '/invoices', labelKey: 'nav.invoices', icon: Receipt, perm: 'viewInvoices' },
+      { href: '/documents', labelKey: 'nav.documents', icon: FolderOpen, badge: 'LIB' },
       { href: '/emails', labelKey: 'nav.emails', icon: Mail, badge: 'NEW', perm: 'sendEmails' },
       { href: '/approvals', labelKey: 'nav.approvals', icon: FileCheck2, badge: '!', perm: 'viewApprovals' },
     ],
@@ -114,6 +116,7 @@ const EXTRA: Record<string, { en: string; fr: string; mg: string }> = {
   'nav.yard': { en: 'Container Yard', fr: 'Yard à Conteneurs', mg: 'Toeram-pitahirizana' },
   'nav.approvals': { en: 'Approvals', fr: 'Approbations', mg: 'Fanekena' },
   'nav.reports': { en: 'Reports & Analytics', fr: 'Rapports & Analytics', mg: 'Tatitra & Antontanisa' },
+  'nav.documents': { en: 'Documents', fr: 'Documents', mg: 'Antontan-taratasy' },
   'common.keyboard_hint': { en: 'Press ⌘K anywhere to search', fr: 'Appuyez sur ⌘K pour rechercher', mg: 'Tsindrio ⌘K raha hitady' },
   'common.keyboard_hint_mob': { en: 'Tap 🔍 to search shipments', fr: 'Appuyez sur 🔍 pour rechercher', mg: 'Tsindrio 🔍 raha hitady' },
   'common.online': { en: 'Online', fr: 'En ligne', mg: 'Mifandray' },

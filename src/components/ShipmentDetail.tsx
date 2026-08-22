@@ -33,7 +33,7 @@ import {
   Scale,
 } from 'lucide-react';
 import { formatDate, formatDateTime, formatMoney, statusColor, titleCase, daysFromNow } from '@/lib/utils';
-import { generateShipmentBL, downloadBlob } from '@/lib/documents';
+import { generateShipmentBL, downloadBlob, previewBlob } from '@/lib/documents';
 import { toast } from '@/lib/store';
 import { appUrl } from '@/lib/appUrl';
 import HSClassifier from './HSClassifier';
@@ -158,8 +158,11 @@ export default function ShipmentDetail({
           <ArrowLeft className="w-4 h-4" /> Back to list
         </Button>
           <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" onClick={() => previewBlob(generateShipmentBL(shipment), `${shipment.reference}_${shipment.mode === 'air' ? 'AWB' : 'BL'}.pdf`)}>
+              <FileText className="w-4 h-4" /> {shipment.mode === 'air' ? 'Preview AWB' : 'Preview B/L'}
+            </Button>
             <Button variant="outline" onClick={() => downloadBlob(generateShipmentBL(shipment), `${shipment.reference}_${shipment.mode === 'air' ? 'AWB' : 'BL'}.pdf`)}>
-              <Download className="w-4 h-4" /> {shipment.mode === 'air' ? 'Download AWB' : 'Download B/L'}
+              <Download className="w-4 h-4" /> Download
             </Button>
             <Button variant="outline" onClick={() => {
               const url = appUrl(`/portal/?t=${tokenFor(shipment.id)}`);

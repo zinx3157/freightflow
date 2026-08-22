@@ -6,11 +6,11 @@ import { Card, Button, Badge, Input, Select, Field, Modal, EmptyState } from '@/
 import { db, toast } from '@/lib/store';
 import type { Invoice } from '@/lib/types';
 import type { DB } from '@/lib/store';
-import { Receipt, Plus, Download, Send, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { Receipt, Plus, Download, Send, CheckCircle, XCircle, FileText, Eye } from 'lucide-react';
 import { formatDate, formatMoney, statusColor, titleCase } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useQueryParams } from '@/lib/useQueryParams';
-import { generateInvoicePDF, downloadBlob } from '@/lib/documents';
+import { generateInvoicePDF, downloadBlob, previewBlob } from '@/lib/documents';
 
 export default function InvoicesPage() {
   const [data, setData] = useState<DB | null>(null);
@@ -167,6 +167,10 @@ export default function InvoicesPage() {
                         {(i.status === 'sent' || i.status === 'overdue') && (
                           <button title="Mark paid" onClick={() => mark(i.id, 'paid')} className="p-1.5 rounded hover:bg-emerald-50 dark:hover:bg-emerald-900/20 text-emerald-600 transition"><CheckCircle className="w-4 h-4" /></button>
                         )}
+                        <button title="Preview PDF" onClick={() => {
+                          const full = data.invoices.find(x => x.id === i.id);
+                          if (full) previewBlob(generateInvoicePDF(full), `${full.number}.pdf`);
+                        }} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"><Eye className="w-4 h-4" /></button>
                         <button title="Download PDF" onClick={() => {
                           const full = data.invoices.find(x => x.id === i.id);
                           if (full) downloadBlob(generateInvoicePDF(full), `${full.number}.pdf`);

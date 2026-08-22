@@ -170,8 +170,19 @@ html.ff-zen:fullscreen, html.ff-zen:fullscreen body, html.ff-zen:-webkit-full-sc
     -webkit-overflow-scrolling: touch;
   }
 
-  .ff-has-bottom-nav main { padding-bottom: calc(104px + var(--safe-bottom)) !important; }
+  .ff-has-bottom-nav main { padding-bottom: calc(88px + var(--safe-bottom)) !important; }
   .ff-bottom-nav { padding-bottom: var(--safe-bottom); }
+
+  /* Phone polish: reduce density and avoid desktop-like cramped tables/cards. */
+  .ff-route-enter { animation: none; }
+  .ff-card:hover, .ff-nav-item:hover { transform: none; }
+  table { font-size: 12px; }
+  th, td { white-space: nowrap; }
+  .ff-stagger > * { animation: none !important; }
+  main .p-6 { padding: 0.75rem !important; }
+  main .p-5 { padding: 0.875rem !important; }
+  main .p-4 { padding: 0.75rem !important; }
+  main .rounded-2xl { border-radius: 1rem; }
 }
 
 /* Offline indicator pulse */

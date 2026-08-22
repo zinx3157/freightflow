@@ -4,9 +4,9 @@ import { useEffect, useState, useRef } from 'react';
 import type { DocFile, DocCategory } from '@/lib/types';
 import { db } from '@/lib/store';
 import { Card, Button, Badge, Select } from './ui';
-import { FileText, UploadCloud, Download, Trash2, File, FileSpreadsheet, FileImage, Package, FileCheck, ShieldCheck, Scroll, Award, FileSignature } from 'lucide-react';
+import { FileText, UploadCloud, Download, Trash2, File, FileSpreadsheet, FileImage, Package, FileCheck, ShieldCheck, Scroll, Award, FileSignature, Eye } from 'lucide-react';
 import { formatBytes } from '@/lib/dgr';
-import { generateShipmentBL, generateInvoicePDF, generateQuotePDF, downloadBlob } from '@/lib/documents';
+import { generateShipmentBL, generateInvoicePDF, generateQuotePDF } from '@/lib/documents';
 import { formatDateTime } from '@/lib/utils';
 
 interface Props {
@@ -51,6 +51,7 @@ export default function DocumentsManager({ relatedType, relatedId, relatedRef, r
   const [docs, setDocs] = useState<DocFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadCategory, setUploadCategory] = useState<DocCategory>('other');
+  const [preview, setPreview] = useState<DocFile | null>(null);
   const fileRef = useRef<HTMLInputElement | null>(null);
 
   const refresh = () => setDocs(db.docsFor(relatedType, relatedId));
@@ -86,28 +87,43 @@ export default function DocumentsManager({ relatedType, relatedId, relatedRef, r
     if (fileRef.current) fileRef.current.value = '';
   };
 
-  const openDoc = (d: DocFile) => {
+  const downloadDoc = (d: DocFile) => {
     if (d.dataUrl) {
       const a = document.createElement('a');
       a.href = d.dataUrl;
       a.download = d.name;
-      a.target = '_blank';
       document.body.appendChild(a); a.click(); a.remove();
     } else {
-      // synthetic: show alert
-      alert(`In production, "${d.name}" would download from cloud storage. In this demo the file metadata is tracked but the binary content is only stored when uploaded via the Upload button.`);
+      alert(`In production, "${d.name}" would download from cloud storage. In this demo the file metadata is tracked but the binary content is only stored when uploaded/generated here.`);
     }
   };
 
-  const autoGenerate = (type: 'bl' | 'invoice' | 'quote') => {
+  const blobToDataUrl = (blob: Blob) => new Promise<string>((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result));
+    r.onerror = reject;
+    r.readAsDataURL(blob);
+  });
+
+  const autoGenerate = async (type: 'bl' | 'invoice' | 'quote') => {
     if (!relatedObject) return;
+    let blob: Blob | null = null;
+    let name = `${relatedRef || 'document'}.pdf`;
+    let category: DocCategory = 'other';
     if (type === 'bl' && relatedType === 'shipment') {
-      downloadBlob(generateShipmentBL(relatedObject), `${relatedRef}_AWB_BL.pdf`);
+      blob = generateShipmentBL(relatedObject);
+      name = `${relatedRef}_${relatedObject.mode === 'air' ? 'AWB' : 'BL'}.pdf`;
+      category = relatedObject.mode === 'air' ? 'airway_bill' : 'bill_of_lading';
     } else if (type === 'invoice' && relatedType === 'invoice') {
-      downloadBlob(generateInvoicePDF(relatedObject), `${relatedRef}.pdf`);
+      blob = generateInvoicePDF(relatedObject); name = `${relatedRef}.pdf`; category = 'invoice_attachment';
     } else if (type === 'quote' && relatedType === 'quote') {
-      downloadBlob(generateQuotePDF(relatedObject), `${relatedRef}.pdf`);
+      blob = generateQuotePDF(relatedObject); name = `${relatedRef}.pdf`; category = 'quote_attachment';
     }
+    if (!blob) return;
+    const dataUrl = await blobToDataUrl(blob);
+    const doc = db.addDoc({ name, category, sizeBytes: blob.size, mimeType: 'application/pdf', dataUrl, relatedType, relatedId, uploadedBy: 'FreightFlow Generator', tags: [relatedRef || '', type].filter(Boolean) });
+    refresh();
+    setPreview(doc);
   };
 
   return (
@@ -188,7 +204,8 @@ export default function DocumentsManager({ relatedType, relatedId, relatedRef, r
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  <button onClick={() => openDoc(d)} className="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300" title="Open/Download"><Download className="w-4 h-4" /></button>
+                  <button onClick={() => setPreview(d)} className="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300" title="Preview"><Eye className="w-4 h-4" /></button>
+                  <button onClick={() => downloadDoc(d)} className="p-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300" title="Download"><Download className="w-4 h-4" /></button>
                   <button onClick={() => { if (confirm('Delete document?')) { db.deleteDoc(d.id); refresh(); } }} className="p-2 rounded-md hover:bg-rose-50 dark:hover:bg-rose-900/30 text-rose-500" title="Delete"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </div>
@@ -196,7 +213,32 @@ export default function DocumentsManager({ relatedType, relatedId, relatedRef, r
           })}
         </div>
       )}
+      {preview && <DocPreviewModal doc={preview} onClose={() => setPreview(null)} onDownload={() => downloadDoc(preview)} />}
     </Card>
+  );
+}
+
+function DocPreviewModal({ doc, onClose, onDownload }: { doc: DocFile; onClose: () => void; onDownload: () => void }) {
+  const canPreview = !!doc.dataUrl && (doc.mimeType.includes('pdf') || doc.mimeType.startsWith('image/') || doc.mimeType.startsWith('text/'));
+  return (
+    <div className="fixed inset-0 z-[120] bg-black/60 p-3 sm:p-6 flex items-center justify-center" onClick={onClose}>
+      <div className="w-full max-w-5xl h-[88dvh] bg-white dark:bg-slate-950 rounded-2xl overflow-hidden shadow-2xl flex flex-col" onClick={e=>e.stopPropagation()}>
+        <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+          <FileText className="w-4 h-4 text-brand" />
+          <div className="font-bold text-sm text-slate-900 dark:text-white truncate flex-1">{doc.name}</div>
+          <Button size="sm" variant="outline" onClick={onDownload}><Download className="w-3 h-3"/> Download</Button>
+          <button onClick={onClose} className="w-9 h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">×</button>
+        </div>
+        <div className="flex-1 bg-slate-100 dark:bg-slate-900">
+          {canPreview ? (
+            doc.mimeType.startsWith('image/') ? <img src={doc.dataUrl} alt={doc.name} className="max-w-full max-h-full mx-auto object-contain" /> :
+            <iframe src={doc.dataUrl} title={doc.name} className="w-full h-full" />
+          ) : (
+            <div className="h-full flex items-center justify-center text-center p-6 text-slate-500"><div><File className="w-10 h-10 mx-auto mb-2"/>Preview is not available for this file type.<br/>Use Download to open it locally.</div></div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 

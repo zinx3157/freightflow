@@ -27,6 +27,7 @@ const PAGE_META: Record<string, { title: string; subtitle?: string; newHref?: st
   '/tracking': { title: 'Track & Trace', subtitle: 'Real-time shipment visibility for you and your clients' },
   '/benchmark': { title: 'FreightFlow vs CargoWise', subtitle: 'Feature-by-feature competitive benchmark' },
   '/emails': { title: 'Email Center', subtitle: 'Two-way inbox · automated customer communications' },
+  '/documents': { title: 'Document Library', subtitle: 'Preview, download, and search generated/uploaded docs' },
   '/rates': { title: 'Rate Cards', subtitle: 'Buy/sell rates across all lanes and carriers' },
   '/warehouse': { title: 'Warehouse (WMS)', subtitle: 'CFS, inbound/outbound, receipts & cargo items' },
   '/approvals': { title: 'Document Approvals', subtitle: 'Approval chains, sign-offs, license expiry alerts' },
@@ -220,12 +221,12 @@ export default function Topbar({ onHamburgerClick }: { onHamburgerClick?: () => 
             </kbd>
           </button>
 
-          <ThemeToggle />
-          <LanguageToggle />
+          <div className="hidden sm:block"><ThemeToggle /></div>
+          <div className="hidden sm:block"><LanguageToggle /></div>
 
           <button
             onClick={() => setZenMode((v) => !v)}
-            className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${zenMode ? 'bg-brand text-white hover:bg-brand/90' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'}`}
+            className={`hidden sm:flex w-9 h-9 rounded-lg items-center justify-center transition-colors ${zenMode ? 'bg-brand text-white hover:bg-brand/90' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300'}`}
             title={zenMode ? 'Exit Zen mode (Ctrl+.)' : 'Zen mode — hide chrome (Ctrl+.)'}
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
@@ -268,7 +269,7 @@ export default function Topbar({ onHamburgerClick }: { onHamburgerClick?: () => 
 
           <button
             onClick={() => setSettingsOpen(true)}
-            className="w-9 h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 transition-colors"
+            className="hidden sm:flex w-9 h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 items-center justify-center text-slate-600 dark:text-slate-300 transition-colors"
             title="Settings / Companies / Sync / Push"
           >
             <Settings className="w-5 h-5" />

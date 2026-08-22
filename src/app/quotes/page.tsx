@@ -7,11 +7,11 @@ import { db } from '@/lib/store';
 import { withBasePath } from '@/lib/basePath';
 import type { Quote, ShipmentMode, ShipmentDirection, QuoteRequest } from '@/lib/types';
 import type { DB } from '@/lib/store';
-import { FileText, Plus, ArrowUpRight, Calendar, Weight, Box, Send, Check, X, Trash2, Download, Inbox, MessageSquare, Sparkles, ExternalLink } from 'lucide-react';
+import { FileText, Plus, ArrowUpRight, Calendar, Weight, Box, Send, Check, X, Trash2, Download, Inbox, MessageSquare, Sparkles, ExternalLink, Eye } from 'lucide-react';
 import { formatDate, formatMoney, statusColor, titleCase, daysFromNow } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useQueryParams } from '@/lib/useQueryParams';
-import { generateQuotePDF, downloadBlob } from '@/lib/documents';
+import { generateQuotePDF, downloadBlob, previewBlob } from '@/lib/documents';
 import PortAutocomplete from '@/components/PortAutocomplete';
 
 export default function QuotesPage() {
@@ -159,6 +159,7 @@ export default function QuotesPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="inline-flex gap-1">
+                          <button title="Preview PDF" onClick={() => { const full = data.quotes.find(x => x.id === q.id); if (full) previewBlob(generateQuotePDF(full), `${full.number}.pdf`); }} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"><Eye className="w-4 h-4" /></button>
                           <button title="Download PDF" onClick={() => { const full = data.quotes.find(x => x.id === q.id); if (full) downloadBlob(generateQuotePDF(full), `${full.number}.pdf`); }} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"><Download className="w-4 h-4" /></button>
                           {q.status === 'pending' && (
                             <>

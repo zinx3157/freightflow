@@ -10,6 +10,7 @@ import { Plus, Edit3, Trash2, Plane, Ship, Truck, TrendingUp, CheckCircle2, Spar
 import { formatMoney } from '@/lib/utils';
 import RateShopper from '@/components/RateShopper';
 import PortAutocomplete from '@/components/PortAutocomplete';
+import LiveRatesPanel from '@/components/LiveRatesPanel';
 
 const MODES: { v: RateMode; icon: React.ReactNode; label: string }[] = [
   { v: 'air', icon: <Plane className="w-4 h-4" />, label: 'Air' },
@@ -83,6 +84,8 @@ export default function RatesPage() {
   return (
     <PageShell title="Rate Management" subtitle="Buy & sell rates across carriers, lanes and modes — powers instant quoting">
       <div className="p-6 space-y-6">
+        <LiveRatesPanel />
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatPill icon={<Plane className="w-5 h-5" />} label="Air rates" value={rates.filter((r) => r.mode === 'air').length} color="blue" />
           <StatPill icon={<Ship className="w-5 h-5" />} label="Sea rates" value={rates.filter((r) => r.mode === 'sea').length} color="indigo" />
