@@ -33,6 +33,12 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
         e.preventDefault();
         setCopilotOpen(true);
       }
+      // "N" new shipment
+      if (e.key.toLowerCase() === 'n' && !isPortal && !isTracking && !zen) {
+        // avoid double-fire: only if not in an input
+        e.preventDefault();
+        window.location.href = '/shipments/?new=1';
+      }
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -69,10 +75,10 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
   // Public routes (no chrome)
   if (isPortal || isTracking) {
     return (
-      <>
+      <div className="min-h-screen w-full overflow-x-hidden">
         <OfflineBanner />
         {children}
-      </>
+      </div>
     );
   }
 
@@ -82,17 +88,17 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
 
   if (!user) {
     return (
-      <>
+      <div className="min-h-screen w-full overflow-x-hidden">
         <OfflineBanner />
         <LoginScreen />
-      </>
+      </div>
     );
   }
 
-  const showBottomNav = !zen && !isDriver; // driver page is its own mobile flow
+  const showBottomNav = !zen && !isDriver;
 
   return (
-    <div className={`flex min-h-screen ${showBottomNav ? 'ff-has-bottom-nav' : ''}`}>
+    <div className={`flex h-screen h-[100dvh] w-full overflow-hidden bg-slate-50 dark:bg-[#0b1220] ${showBottomNav ? 'ff-has-bottom-nav' : ''}`}>
       <PageTransition />
       {/* Desktop sidebar */}
       {!zen && <Sidebar />}
@@ -100,10 +106,13 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
       {/* Mobile drawer sidebar */}
       {!zen && <Sidebar mobileOpen={mobileMenuOpen} onCloseMobile={() => setMobileMenuOpen(false)} />}
 
-      <div className="flex-1 flex flex-col min-w-0 relative">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 relative">
         {!zen && <Topbar onHamburgerClick={() => setMobileMenuOpen(true)} />}
         <OfflineBanner />
-        <main key={pathname} className={`flex-1 min-w-0 ff-route-enter ${zen ? 'h-screen h-[100dvh] overflow-auto' : ''}`}>
+        <main
+          key={pathname}
+          className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden ff-route-enter ${zen ? 'overflow-auto' : ''}`}
+        >
           {children}
         </main>
         {!zen && <CopilotFab onClick={() => setCopilotOpen(true)} />}

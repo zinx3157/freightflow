@@ -17,8 +17,17 @@ export default function PageShell({
     document.title = `${title} — FreightFlow`;
   }, [title]);
   return (
-    <main className="flex-1 w-full p-3 sm:p-6 space-y-4 sm:space-y-6 bg-slate-50 dark:bg-[#0b1220] overflow-x-hidden ff-stagger">
+    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6 w-full ff-stagger">
+      {(title || subtitle || action) && (
+        <div className="flex items-start justify-between gap-3 flex-wrap ff-fade-up">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{title}</h1>
+            {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5 max-w-3xl">{subtitle}</p>}
+          </div>
+          {action && <div className="shrink-0">{action}</div>}
+        </div>
+      )}
       {children}
-    </main>
+    </div>
   );
 }

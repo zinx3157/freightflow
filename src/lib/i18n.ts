@@ -13,13 +13,21 @@ type Dict = Record<string, string | Record<string, string>>;
 
 const en: Dict = {
   app: { name: 'FreightFlow', tagline: 'Logistics OS' },
+  sec: {
+    overview: 'Overview', sell: 'Sell & Quote', ops: 'Operations',
+    whs: 'Warehousing', comm: 'Commercial', insights: 'Insights',
+  },
   nav: {
-    dashboard: 'Dashboard', livemap: 'Live Map', shipments: 'Shipments', air: 'Air Freight', sea: 'Sea Freight',
-    customs: 'Customs', trucking: 'Trucking', customers: 'Customers', quotes: 'Quotes', rates: 'Rate Cards',
-    invoices: 'Invoices', reports: 'Reports', tracking: 'Track & Trace', emails: 'Email Center',
-    warehouse: 'Warehouse (WMS)', driver: 'Driver POD App', benchmark: 'CW Benchmark', settings: 'Settings',
+    dashboard: 'Dashboard', livemap: 'Live Map', shipments: 'All Shipments', air: 'Air Freight (AWB)', sea: 'Sea Freight (FCL/LCL)',
+    customs: 'Customs Clearance', trucking: 'Trucking & Dispatch', customers: 'Customers', quotes: 'Quotes', rates: 'Rate Cards',
+    invoices: 'Invoices & Billing', reports: 'Reports & BI', tracking: 'Track & Trace', emails: 'Email Center',
+    warehouse: 'Warehouse (WMS/CFS)', driver: 'Driver POD App', benchmark: 'CW Benchmark', settings: 'Settings',
+    yard: 'Container Yard', approvals: 'Approvals',
   },
   common: {
+    keyboard_hint: 'Press ⌘K anywhere to search',
+    keyboard_hint_mob: 'Tap 🔍 to search shipments',
+    online: 'Online',
     new: 'New', save: 'Save', cancel: 'Cancel', delete: 'Delete', edit: 'Edit', submit: 'Submit', search: 'Search',
     back: 'Back', next: 'Next', download: 'Download', upload: 'Upload', share: 'Share', close: 'Close',
     status: 'Status', date: 'Date', reference: 'Reference', customer: 'Customer', carrier: 'Carrier',
@@ -85,14 +93,21 @@ const en: Dict = {
 
 const fr: Dict = {
   app: { name: 'FreightFlow', tagline: 'Système logistique' },
+  sec: {
+    overview: 'Vue d\'ensemble', sell: 'Vente & Devis', ops: 'Opérations',
+    whs: 'Entreposage', comm: 'Commercial', insights: 'Analyses',
+  },
   nav: {
-    dashboard: 'Tableau de bord', livemap: 'Carte en direct', shipments: 'Expéditions', air: 'Fret Aérien',
-    sea: 'Fret Maritime', customs: 'Douanes', trucking: 'Camionnage', customers: 'Clients',
-    quotes: 'Devis', rates: 'Tarifs', invoices: 'Factures', reports: 'Rapports', tracking: 'Suivi',
-    emails: 'Centre Emails', warehouse: 'Entrepôt (WMS)', driver: 'Appli Chauffeur',
-    benchmark: 'Benchmark CW', settings: 'Paramètres',
+    dashboard: 'Tableau de bord', livemap: 'Carte en direct', shipments: 'Toutes les expéditions', air: 'Fret Aérien (LTA)', sea: 'Fret Maritime (FCL/LCL)',
+    customs: 'Dédouanement', trucking: 'Camionnage & Dispatch', customers: 'Clients',
+    quotes: 'Devis', rates: 'Tarifs', invoices: 'Factures & Recouvrement', reports: 'Rapports & BI', tracking: 'Suivi',
+    emails: 'Centre Emails', warehouse: 'Entrepôt (WMS/CFS)', driver: 'Appli Chauffeur POD',
+    benchmark: 'Benchmark CW', settings: 'Paramètres', yard: 'Yard à Conteneurs', approvals: 'Approbations',
   },
   common: {
+    keyboard_hint: 'Appuyez sur ⌘K partout pour rechercher',
+    keyboard_hint_mob: 'Appuyez sur 🔍 pour rechercher',
+    online: 'En ligne',
     new: 'Nouveau', save: 'Enregistrer', cancel: 'Annuler', delete: 'Supprimer', edit: 'Modifier',
     submit: 'Envoyer', search: 'Rechercher', back: 'Retour', next: 'Suivant', download: 'Télécharger',
     upload: 'Téléverser', share: 'Partager', close: 'Fermer', status: 'Statut', date: 'Date',
@@ -150,14 +165,22 @@ const fr: Dict = {
 
 const mg: Dict = {
   app: { name: 'FreightFlow', tagline: 'Rafitry ny Fandefasana entana' },
+  sec: {
+    overview: 'Topi-maso', sell: 'Varotra & Tombana', ops: 'Asa fanaterana',
+    whs: 'Trano fitehirizana', comm: 'Arah-barotra', insights: 'Fanadihadiana',
+  },
   nav: {
-    dashboard: 'Fandraisana', livemap: 'Sarintany mivantana', shipments: 'Entana', air: 'Fiaramanidina',
-    sea: 'Sambo', customs: 'Fadintseranana', trucking: 'Kamiao', customers: 'Mpanjifa',
-    quotes: 'Tombana', rates: 'Vidin\'ny dia', invoices: 'Faktiora', reports: 'Tatitra',
-    tracking: 'Fanaraha-maso', emails: 'Mailaka', warehouse: 'Trano fitehirizana',
-    driver: 'Fampiasa Mpamily', benchmark: 'Fampitahana CW', settings: 'Fikirana',
+    dashboard: 'Fandraisana', livemap: 'Sarintany mivantana', shipments: 'Entana rehetra', air: 'Fiaramanidina (LTA)', sea: 'Sambo (FCL/LCL)',
+    customs: 'Fadintseranana', trucking: 'Kamiao & Fandefasana', customers: 'Mpanjifa',
+    quotes: 'Tombana', rates: 'Vidin\'ny dia', invoices: 'Faktiora & Fandoavana', reports: 'Tatitra & BI',
+    tracking: 'Fanaraha-maso', emails: 'Mailaka', warehouse: 'Trano fitehirizana (WMS/CFS)',
+    driver: 'Fampiasa Mpamily POD', benchmark: 'Fampitahana CW', settings: 'Fikirana',
+    yard: 'Toeram-pitahirizana', approvals: 'Fanekena',
   },
   common: {
+    keyboard_hint: 'Tsindrio ⌘K na aiza na aiza raha hitady',
+    keyboard_hint_mob: 'Tsindrio 🔍 raha hitady',
+    online: 'Mifandray',
     new: 'Vaovao', save: 'Tehirizo', cancel: 'Aza atao', delete: 'Fafana', edit: 'Ahitsio',
     submit: 'Alefaso', search: 'Karohy', back: 'Miverina', next: 'Manaraka', download: 'Sintomy',
     upload: 'Ampidiro', share: 'Zarao', close: 'Akatona', status: 'Toe-javatra', date: 'Daty',

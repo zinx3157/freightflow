@@ -149,7 +149,7 @@ html.ff-zen:fullscreen, html.ff-zen:fullscreen body, html.ff-zen:-webkit-full-sc
 
 /* Mobile bottom tab bar spacing */
 @media (max-width: 767px) {
-  .ff-has-bottom-nav main { padding-bottom: calc(72px + var(--safe-bottom)); }
+  .ff-has-bottom-nav main { padding-bottom: calc(92px + var(--safe-bottom)) !important; }
   .ff-bottom-nav { padding-bottom: var(--safe-bottom); }
 }
 

@@ -2,7 +2,7 @@
  * Cache-first for static assets, network-first for HTML with offline shell fallback.
  * Base-path aware (works at root AND under /freightflow/ on GitHub Pages).
  */
-const CACHE = 'freightflow-b9-3-1-v1';
+const CACHE = 'freightflow-b9-3-2-v1';
 const RUNTIME = 'freightflow-b9-runtime';
 
 const basePath = self.registration?.scope?.includes('/freightflow') ? '/freightflow' : '';

@@ -29,77 +29,95 @@ import {
   Workflow,
 } from 'lucide-react';
 import { useAuth, roleLabel } from './AuthProvider';
+import { useI18n } from './I18nProvider';
 import { useEffect, useState } from 'react';
 
 type NavItem = {
   href: string;
-  label: string;
+  labelKey: string;
   icon: any;
   badge?: string;
   perm?: string;
 };
 
 type NavSection = {
-  title: string;
+  titleKey: string;
   icon?: any;
   items: NavItem[];
 };
 
-// Logical workflow-based navigation matching a forwarder's actual process:
-//   DASHBOARD → QUOTE → OPERATIONS (AIR/SEA/CUSTOMS/TRUCKING) → WAREHOUSE/YARD → COMMERCIAL (CUSTOMERS/INVOICES) → INSIGHTS
 const SECTIONS: NavSection[] = [
   {
-    title: 'Overview',
+    titleKey: 'sec_overview',
     items: [
-      { href: '/', label: 'Dashboard', icon: LayoutDashboard, perm: 'viewDashboard' },
-      { href: '/map', label: 'Live Map', icon: Globe, badge: 'AI', perm: 'viewMap' },
+      { href: '/', labelKey: 'nav.dashboard', icon: LayoutDashboard, perm: 'viewDashboard' },
+      { href: '/map', labelKey: 'nav.livemap', icon: Globe, badge: 'AI', perm: 'viewMap' },
     ],
   },
   {
-    title: 'Sell & Quote',
+    titleKey: 'sec_sell',
     icon: Sparkles,
     items: [
-      { href: '/quotes', label: 'Quotes', icon: FileText, perm: 'viewQuotes' },
-      { href: '/rates', label: 'Rate Cards', icon: Calculator, badge: 'NEW', perm: 'viewQuotes' },
-      { href: '/customers', label: 'Customers', icon: Users, perm: 'viewCustomers' },
-      { href: '/benchmark', label: 'CW Benchmark', icon: Award, badge: 'NEW', perm: 'viewBenchmark' },
+      { href: '/quotes', labelKey: 'nav.quotes', icon: FileText, perm: 'viewQuotes' },
+      { href: '/rates', labelKey: 'nav.rates', icon: Calculator, badge: 'NEW', perm: 'viewQuotes' },
+      { href: '/customers', labelKey: 'nav.customers', icon: Users, perm: 'viewCustomers' },
+      { href: '/benchmark', labelKey: 'nav.benchmark', icon: Award, badge: 'NEW', perm: 'viewBenchmark' },
     ],
   },
   {
-    title: 'Operations',
+    titleKey: 'sec_ops',
     icon: Workflow,
     items: [
-      { href: '/shipments', label: 'All Shipments', icon: Package, perm: 'viewShipments' },
-      { href: '/shipments/?mode=air', label: 'Air Freight (AWB)', icon: Plane, perm: 'viewAir' },
-      { href: '/shipments/?mode=sea', label: 'Sea Freight (FCL/LCL)', icon: Ship, perm: 'viewSea' },
-      { href: '/customs', label: 'Customs Clearance', icon: ShieldCheck, perm: 'viewCustoms' },
-      { href: '/trucking', label: 'Trucking & Dispatch', icon: Truck, perm: 'viewTrucking' },
+      { href: '/shipments', labelKey: 'nav.shipments', icon: Package, perm: 'viewShipments' },
+      { href: '/shipments/?mode=air', labelKey: 'nav.air', icon: Plane, perm: 'viewAir' },
+      { href: '/shipments/?mode=sea', labelKey: 'nav.sea', icon: Ship, perm: 'viewSea' },
+      { href: '/customs', labelKey: 'nav.customs', icon: ShieldCheck, perm: 'viewCustoms' },
+      { href: '/trucking', labelKey: 'nav.trucking', icon: Truck, perm: 'viewTrucking' },
     ],
   },
   {
-    title: 'Warehousing',
+    titleKey: 'sec_whs',
     items: [
-      { href: '/warehouse', label: 'Warehouse (WMS/CFS)', icon: Warehouse, badge: 'NEW', perm: 'viewWarehouse' },
-      { href: '/yard', label: 'Container Yard', icon: Grid3x3, badge: 'CY', perm: 'viewWarehouse' },
-      { href: '/driver', label: 'Driver POD App', icon: Smartphone, badge: '📱', perm: 'viewDriverApp' },
+      { href: '/warehouse', labelKey: 'nav.warehouse', icon: Warehouse, badge: 'NEW', perm: 'viewWarehouse' },
+      { href: '/yard', labelKey: 'nav.yard', icon: Grid3x3, badge: 'CY', perm: 'viewWarehouse' },
+      { href: '/driver', labelKey: 'nav.driver', icon: Smartphone, badge: '📱', perm: 'viewDriverApp' },
     ],
   },
   {
-    title: 'Commercial',
+    titleKey: 'sec_comm',
     items: [
-      { href: '/invoices', label: 'Invoices & Billing', icon: Receipt, perm: 'viewInvoices' },
-      { href: '/emails', label: 'Email Center', icon: Mail, badge: 'NEW', perm: 'sendEmails' },
-      { href: '/approvals', label: 'Approvals', icon: FileCheck2, badge: '!', perm: 'viewApprovals' },
+      { href: '/invoices', labelKey: 'nav.invoices', icon: Receipt, perm: 'viewInvoices' },
+      { href: '/emails', labelKey: 'nav.emails', icon: Mail, badge: 'NEW', perm: 'sendEmails' },
+      { href: '/approvals', labelKey: 'nav.approvals', icon: FileCheck2, badge: '!', perm: 'viewApprovals' },
     ],
   },
   {
-    title: 'Insights',
+    titleKey: 'sec_insights',
     items: [
-      { href: '/reports', label: 'Reports & Analytics', icon: BarChart3, perm: 'viewReports' },
-      { href: '/tracking', label: 'Track & Trace', icon: Search },
+      { href: '/reports', labelKey: 'nav.reports', icon: BarChart3, perm: 'viewReports' },
+      { href: '/tracking', labelKey: 'nav.tracking', icon: Search },
     ],
   },
 ];
+
+const SECTION_LABELS: Record<string, { en: string; fr: string; mg: string }> = {
+  sec_overview: { en: 'Overview', fr: 'Vue d\'ensemble', mg: 'Topi-maso' },
+  sec_sell: { en: 'Sell & Quote', fr: 'Vente & Devis', mg: 'Varotra & Tombana' },
+  sec_ops: { en: 'Operations', fr: 'Opérations', mg: 'Asa fanaterana' },
+  sec_whs: { en: 'Warehousing', fr: 'Entreposage', mg: 'Trano fitehirizana' },
+  sec_comm: { en: 'Commercial', fr: 'Commercial', mg: 'Arah-barotra' },
+  sec_insights: { en: 'Insights', fr: 'Analyses', mg: 'Fanadihadiana' },
+};
+
+// Extra nav keys not yet in i18n.ts dictionary
+const EXTRA: Record<string, { en: string; fr: string; mg: string }> = {
+  'nav.yard': { en: 'Container Yard', fr: 'Yard à Conteneurs', mg: 'Toeram-pitahirizana' },
+  'nav.approvals': { en: 'Approvals', fr: 'Approbations', mg: 'Fanekena' },
+  'nav.reports': { en: 'Reports & Analytics', fr: 'Rapports & Analytics', mg: 'Tatitra & Antontanisa' },
+  'common.keyboard_hint': { en: 'Press ⌘K anywhere to search', fr: 'Appuyez sur ⌘K pour rechercher', mg: 'Tsindrio ⌘K raha hitady' },
+  'common.keyboard_hint_mob': { en: 'Tap 🔍 to search shipments', fr: 'Appuyez sur 🔍 pour rechercher', mg: 'Tsindrio 🔍 raha hitady' },
+  'common.online': { en: 'Online', fr: 'En ligne', mg: 'Mifandray' },
+};
 
 const PERMS = {
   admin: { viewDashboard: true, viewMap: true, viewShipments: true, viewAir: true, viewSea: true, viewCustoms: true, viewTrucking: true, viewCustomers: true, viewQuotes: true, viewInvoices: true, viewReports: true, viewBenchmark: true, sendEmails: true, viewWarehouse: true, viewDriverApp: true, viewApprovals: true },
@@ -109,6 +127,14 @@ const PERMS = {
   driver: { viewTrucking: true, viewDriverApp: true, viewWarehouse: false, viewApprovals: false },
 };
 
+function tr(t: (k: string) => string, key: string): string {
+  const v = t(key);
+  if (v && v !== key) return v;
+  const extra = (EXTRA as any)[key];
+  if (extra) return extra[t('') ? 'en' : 'en']; // fallback; below we resolve properly
+  return key;
+}
+
 interface SidebarProps {
   mobileOpen?: boolean;
   onCloseMobile?: () => void;
@@ -117,11 +143,12 @@ interface SidebarProps {
 export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { lang, t } = useI18n();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setMounted(true), 10);
-    return () => clearTimeout(t);
+    const tm = setTimeout(() => setMounted(true), 10);
+    return () => clearTimeout(tm);
   }, []);
 
   // Close drawer on route change
@@ -149,6 +176,11 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
     return user.role === 'admin' || (PERMS as any)[user.role]?.[perm] === true;
   };
 
+  const tt = (key: string): string => {
+    const v = t(key);
+    return v !== key ? v : key;
+  };
+
   const content = (
     <>
       <div className="px-5 py-5 border-b border-white/10 dark:border-slate-800 flex items-center justify-between">
@@ -172,20 +204,22 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
         {SECTIONS.map((section, sIdx) => {
           const visibleItems = section.items.filter(it => canSee(it.perm));
           if (visibleItems.length === 0) return null;
+          const SecIcon = section.icon;
           return (
             <div
-              key={section.title}
+              key={section.titleKey}
               className={`mb-4 transition-all duration-300 ease-out ${mounted ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-3'}`}
               style={{ transitionDelay: `${sIdx * 40}ms` }}
             >
-              <div className="px-5 mb-1 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">
-                {section.icon && <section.icon className="w-3 h-3" />}
-                {section.title}
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/40">
+                {SecIcon && <SecIcon className="w-3 h-3" />}
+                {tt(`sec.${section.titleKey.replace('sec_', '')}`)}
               </div>
               <div className="px-3 space-y-0.5">
                 {visibleItems.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
+                  const label = tt(item.labelKey);
                   return (
                     <Link
                       key={item.href}
@@ -198,12 +232,11 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
                           : 'text-white/70 hover:bg-white/10 hover:text-white'
                       )}
                     >
-                      {/* Active indicator bar */}
                       {active && (
-                        <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-gradient-to-b from-amber-300 to-amber-500" />
+                        <span className="ff-nav-active-bar absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-gradient-to-b from-amber-300 to-amber-500" />
                       )}
                       <Icon className={cn('w-[18px] h-[18px] shrink-0 transition-transform group-hover:scale-110', active && 'text-amber-200')} />
-                      <span className="flex-1 truncate">{item.label}</span>
+                      <span className="flex-1 truncate">{label}</span>
                       {item.badge && (
                         <span className={cn(
                           'text-[9px] font-bold px-1.5 py-0.5 rounded-full',
@@ -227,8 +260,8 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
         <div className="px-4 mt-2">
           <div className="px-3 py-3 rounded-xl bg-white/5 border border-white/10 text-xs text-white/70">
             <div className="text-[10px] uppercase tracking-widest text-white/50 mb-1">Keyboard</div>
-            <div className="hidden md:block">Press <kbd className="px-1.5 py-0.5 bg-white/10 rounded font-mono text-[10px]">⌘K</kbd> anywhere to search</div>
-            <div className="md:hidden">Tap the 🔍 button to search shipments</div>
+            <div className="hidden md:block">{tt('common.keyboard_hint')}</div>
+            <div className="md:hidden">{tt('common.keyboard_hint_mob')}</div>
           </div>
         </div>
       </nav>
@@ -243,7 +276,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
               <div className="text-sm font-medium text-white truncate">{user.name}</div>
               <div className="text-[11px] text-white/60 truncate">{roleLabel(user.role)}</div>
             </div>
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px] shadow-emerald-400/50 ff-glow-emerald" title="Online" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px] shadow-emerald-400/50 ff-glow-emerald" title={tt('common.online')} />
           </div>
         )}
       </div>
@@ -255,7 +288,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
     return (
       <>
         <div
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden animate-[fadeIn_0.2s_ease-out]"
+          className="ff-modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
           onClick={onCloseMobile}
           aria-hidden="true"
         />
@@ -267,7 +300,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
   }
 
   return (
-    <aside className="w-64 shrink-0 bg-gradient-to-b from-brand to-brand-dark dark:from-slate-950 dark:to-slate-900 text-white flex flex-col border-r border-white/10 dark:border-slate-800 hidden md:flex">
+    <aside className="w-64 shrink-0 bg-gradient-to-b from-brand to-brand-dark dark:from-slate-950 dark:to-slate-900 text-white flex flex-col border-r border-white/10 dark:border-slate-800 hidden md:flex overflow-y-auto">
       {content}
     </aside>
   );

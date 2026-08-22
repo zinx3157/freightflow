@@ -207,7 +207,10 @@ export const PORTS: Port[] = [
 export const PORT_DIRECTORY: Port[] = PORTS.filter(p => p.city && p.country && p.code.length >= 3 && !p.name.includes('(unused)') && !p.name.includes('skipped'));
 
 export function searchPorts(query: string, mode?: 'air' | 'sea', limit = 8): Port[] {
-  const q = query.trim().toLowerCase();
+  let q = query.trim().toLowerCase();
+  // If user typed a selection like "Toamasina (MGTOA)" they may continue typing to refine;
+  // strip the parenthetical code so the rest still matches ("toamasina" etc).
+  q = q.replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
   if (!q) {
     // Return Madagascar + regional defaults when nothing typed
     return PORT_DIRECTORY
@@ -219,18 +222,23 @@ export function searchPorts(query: string, mode?: 'air' | 'sea', limit = 8): Por
       })
       .slice(0, limit);
   }
+  const tokens = q.split(/\s+/).filter(Boolean);
   const scored: Array<{ p: Port; score: number }> = [];
   for (const p of PORT_DIRECTORY) {
     if (mode && p.type !== mode && p.type !== 'both') continue;
     const hay = (p.code + ' ' + p.name + ' ' + p.city + ' ' + p.country + ' ' + (p.countryCode||'')).toLowerCase();
-    if (!hay.includes(q)) continue;
+    // every token must match somewhere in hay
+    if (!tokens.every(tok => hay.includes(tok))) continue;
     let score = 0;
     if (p.code.toLowerCase() === q) score -= 100;
-    if (p.code.toLowerCase().startsWith(q)) score -= 50;
-    if (p.city.toLowerCase().startsWith(q)) score -= 30;
-    if (p.name.toLowerCase().startsWith(q)) score -= 20;
+    if (p.code.toLowerCase().startsWith(tokens[0])) score -= 50;
+    if (p.city.toLowerCase().startsWith(tokens[0])) score -= 30;
+    if (p.name.toLowerCase().startsWith(tokens[0])) score -= 20;
     if (p.countryCode === 'MG') score -= 15;
     if (p.city.toLowerCase() === q) score -= 40;
+    // substring earlier = better
+    const idx = hay.indexOf(tokens[0]);
+    if (idx >= 0) score += Math.min(idx, 50);
     scored.push({ p, score });
   }
   scored.sort((a, b) => a.score - b.score);

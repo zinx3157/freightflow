@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import PageShell from '@/components/PageShell';
 import { Card, StatCard, Badge, Button } from '@/components/ui';
 import { Sparkline, ProgressBar, ProgressRing } from '@/components/Sparkline';
@@ -8,6 +9,7 @@ import { ExceptionsCenter } from '@/components/ExceptionsCenter';
 import { ProfitabilityAnalytics } from '@/components/ProfitabilityAnalytics';
 import { CarrierPerformance } from '@/components/CarrierPerformance';
 import { ShipmentKanban } from '@/components/ShipmentKanban';
+import { useI18n } from '@/components/I18nProvider';
 import { db } from '@/lib/store';
 import type { Shipment, Activity } from '@/lib/types';
 import type { DB } from '@/lib/store';
@@ -35,7 +37,6 @@ import {
 const TrendUp = TrendingUp;
 import { formatMoney, formatDate, formatDateTime, statusColor, titleCase, daysFromNow } from '@/lib/utils';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 function StatusPill({ kind, status }: { kind: string; status: string }) {
   return (
@@ -45,10 +46,34 @@ function StatusPill({ kind, status }: { kind: string; status: string }) {
   );
 }
 
+const DASH_STRINGS: Record<string, { en: string; fr: string; mg: string }> = {
+  title: { en: 'Operations Dashboard', fr: 'Tableau de bord Opérations', mg: 'Takelaka fandraisana' },
+  welcome: { en: 'Welcome back. You have', fr: 'Bon retour. Vous avez', mg: 'Tonga soa. Manana' },
+  activeShip: { en: 'active shipments', fr: 'expéditions en cours', mg: 'entana miasa' },
+  overdueInv: { en: 'overdue invoices', fr: 'factures en retard', mg: 'faktiora tara' },
+  pendingAppr: { en: 'pending approvals', fr: 'approbations en attente', mg: 'fanekena miandry' },
+  newShip: { en: 'New Shipment', fr: 'Nouvelle expédition', mg: 'Entana vaovao' },
+  newShipShort: { en: 'New', fr: 'Nouv.', mg: 'Vaovao' },
+  createQuote: { en: 'Create Quote', fr: 'Créer un devis', mg: 'Hanao tombana' },
+  quoteShort: { en: 'Quote', fr: 'Devis', mg: 'Tombana' },
+  dispatch: { en: 'Dispatch Truck', fr: 'Dispatcher camion', mg: 'Handefa kamiao' },
+  truckShort: { en: 'Truck', fr: 'Camion', mg: 'Kamiao' },
+  invoice: { en: 'Issue Invoice', fr: 'Créer facture', mg: 'Hamoaka faktiora' },
+  invoiceShort: { en: 'Invoice', fr: 'Facture', mg: 'Faktiora' },
+  emailCenter: { en: 'Email Center', fr: 'Centre Emails', mg: 'Foibe mailaka' },
+  emailShort: { en: 'Email', fr: 'Email', mg: 'Mailaka' },
+  boardView: { en: 'Board view', fr: 'Vue tableau', mg: 'Tabilao' },
+  listView: { en: 'List view', fr: 'Vue liste', mg: 'Lisitra' },
+  upcoming: { en: 'Upcoming Arrivals', fr: 'Arrivages à venir', mg: 'Entana ho avy' },
+  viewAll: { en: 'View all →', fr: 'Voir tout →', mg: 'Hijery rehetra →' },
+};
+
 export default function Dashboard() {
   const [data, setData] = useState<DB | null>(null);
   const [kanbanMode, setKanbanMode] = useState(false);
   const router = useRouter();
+  const { lang } = useI18n();
+  const str = (k: string) => DASH_STRINGS[k]?.[lang as keyof typeof DASH_STRINGS[string]] || DASH_STRINGS[k]?.en || k;
 
   useEffect(() => {
     setData(db.getAll());
@@ -203,28 +228,28 @@ export default function Dashboard() {
 
   return (
     <PageShell
-      title="Operations Dashboard"
-      subtitle={`Welcome back. You have ${stats.active} active shipments · ${stats.overdueInvoices} overdue invoices · ${stats.openApprovals} pending approvals.`}
+      title={str('title') || "Operations Dashboard"}
+      subtitle={`${str('welcome')} ${stats.active} ${str('activeShip')} · ${stats.overdueInvoices} ${str('overdueInv')} · ${stats.openApprovals} ${str('pendingAppr')}.`}
     >
       {/* Quick actions — scrollable on mobile */}
       <div className="flex gap-2 overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0 pb-1 no-scrollbar ff-table-wrap">
         <Button onClick={() => router.push('/shipments?new=1')} className="shrink-0">
-          <Package className="w-4 h-4" /> <span className="hidden sm:inline">New Shipment</span><span className="sm:hidden">New</span>
+          <Package className="w-4 h-4" /> <span className="hidden sm:inline">{str('newShip')}</span><span className="sm:hidden">{str('newShipShort')}</span>
         </Button>
         <Button variant="outline" onClick={() => router.push('/quotes?new=1')} className="shrink-0">
-          <ArrowUpRight className="w-4 h-4" /> <span className="hidden sm:inline">Create Quote</span><span className="sm:hidden">Quote</span>
+          <ArrowUpRight className="w-4 h-4" /> <span className="hidden sm:inline">{str('createQuote')}</span><span className="sm:hidden">{str('quoteShort')}</span>
         </Button>
         <Button variant="outline" onClick={() => router.push('/trucking?new=1')} className="shrink-0">
-          <Truck className="w-4 h-4" /> <span className="hidden sm:inline">Dispatch Truck</span><span className="sm:hidden">Truck</span>
+          <Truck className="w-4 h-4" /> <span className="hidden sm:inline">{str('dispatch')}</span><span className="sm:hidden">{str('truckShort')}</span>
         </Button>
         <Button variant="outline" onClick={() => router.push('/invoices?new=1')} className="shrink-0">
-          <DollarSign className="w-4 h-4" /> <span className="hidden sm:inline">Issue Invoice</span><span className="sm:hidden">Invoice</span>
+          <DollarSign className="w-4 h-4" /> <span className="hidden sm:inline">{str('invoice')}</span><span className="sm:hidden">{str('invoiceShort')}</span>
         </Button>
         <Button variant="outline" onClick={() => router.push('/emails')} className="shrink-0">
-          <Mail className="w-4 h-4" /> <span className="hidden sm:inline">Email Center</span><span className="sm:hidden">Email</span>
+          <Mail className="w-4 h-4" /> <span className="hidden sm:inline">{str('emailCenter')}</span><span className="sm:hidden">{str('emailShort')}</span>
         </Button>
         <Button variant="ghost" onClick={() => setKanbanMode(!kanbanMode)} className="shrink-0">
-          {kanbanMode ? <><List className="w-4 h-4" /> List view</> : <><LayoutGrid className="w-4 h-4" /> Board view</>}
+          {kanbanMode ? <><List className="w-4 h-4" /> {str('listView')}</> : <><LayoutGrid className="w-4 h-4" /> {str('boardView')}</>}
         </Button>
         <Button variant="ghost" onClick={() => { if (confirm('Reset demo data?')) { localStorage.removeItem('freightflow_auth_v1'); db.reset(); location.reload(); } }} className="shrink-0">
           Reset
