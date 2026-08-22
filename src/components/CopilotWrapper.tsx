@@ -9,6 +9,7 @@ import AICopilot, { CopilotFab } from './AICopilot';
 import LoginScreen from './LoginScreen';
 import MobileBottomNav from './MobileBottomNav';
 import OfflineBanner from './OfflineBanner';
+import PageTransition from './PageTransition';
 import { Maximize2, Menu } from 'lucide-react';
 
 export default function CopilotWrapper({ children }: { children: React.ReactNode }) {
@@ -91,6 +92,7 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
 
   return (
     <div className={`flex min-h-screen ${showBottomNav ? 'ff-has-bottom-nav' : ''}`}>
+      <PageTransition />
       {/* Desktop sidebar */}
       {!zen && <Sidebar />}
 
@@ -100,7 +102,7 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
       <div className="flex-1 flex flex-col min-w-0 relative">
         {!zen && <Topbar onHamburgerClick={() => setMobileMenuOpen(true)} />}
         <OfflineBanner />
-        <main className={`flex-1 min-w-0 ${zen ? 'h-screen h-[100dvh] overflow-auto' : ''}`}>
+        <main key={pathname} className={`flex-1 min-w-0 ff-route-enter ${zen ? 'h-screen h-[100dvh] overflow-auto' : ''}`}>
           {children}
         </main>
         {!zen && <CopilotFab onClick={() => setCopilotOpen(true)} />}

@@ -119,6 +119,19 @@ button, .no-select { -webkit-user-select: none; user-select: none; }
 .ff-sheet-up { animation: slideUp 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
 .ff-fade-up { animation: slideUpFade 0.2s ease-out both; }
 
+/* Route-change progress bar */
+@keyframes ff-progress {
+  0%   { transform: scaleX(0); transform-origin: left; opacity: 1; }
+  60%  { transform: scaleX(0.85); transform-origin: left; opacity: 1; }
+  100% { transform: scaleX(1); transform-origin: left; opacity: 0; }
+}
+@keyframes ff-route-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ff-route-enter > * { animation: ff-route-in 0.22s ease-out both; }
+main > div { /* no-op to keep CSS structure */ }
+
 /* Zen / Full-screen mode */
 html.ff-zen body { overflow: hidden; }
 html.ff-zen .flex.min-h-screen { height: 100vh; height: 100dvh; }

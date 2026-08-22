@@ -4,34 +4,31 @@ import jsPDF from 'jspdf';
 import type { Shipment, Invoice, Quote } from './types';
 
 // ============================================================
-// FreightFlow professional document generators.
-// - Air Waybill (AWB) — IATA-style layout
-// - Bill of Lading (B/L) — traditional maritime B/L format
+// FreightFlow professional PDF document generators.
+// - Air Waybill (AWB): IATA-style layout
+// - FIATA Multimodal Transport Bill of Lading (FBL) — official FIATA layout
 // - Commercial Invoice
 // - Freight Quotation
 // ============================================================
 
-const BRAND = [15, 76, 129] as [number, number, number];       // #0f4c81
+const BRAND = [15, 76, 129] as [number, number, number];
 const BRAND_DARK = [10, 55, 95] as [number, number, number];
 const INK = [20, 28, 42] as [number, number, number];
 const MUTED = [100, 110, 125] as [number, number, number];
-const GRID = [210, 215, 225] as [number, number, number];
+const GRID = [190, 195, 205] as [number, number, number];
 const BG_SOFT = [246, 248, 252] as [number, number, number];
-const PAGE_W = 210;
+const FIATA_GREEN = [0, 90, 70] as [number, number, number];
 const MARGIN_L = 12;
 const MARGIN_R = 12;
-const CONTENT_W = PAGE_W - MARGIN_L - MARGIN_R;
-
-type Ctx = {
-  doc: jsPDF;
-  y: number;
-};
+const PAGE_W = 210;
+const W = PAGE_W - MARGIN_L - MARGIN_R;  // content width alias
+const CONTENT_W = W;
 
 // ---------- helpers ----------
-function text(doc: jsPDF, str: string, x: number, y: number, opts: { size?: number; bold?: boolean; color?: [number, number, number]; italic?: boolean; align?: 'left' | 'right' | 'center'; maxWidth?: number } = {}) {
+type TxtOpts = { size?: number; bold?: boolean; italic?: boolean; color?: [number, number, number]; align?: 'left'|'right'|'center'; maxWidth?: number };
+function text(doc: jsPDF, str: string, x: number, y: number, opts: TxtOpts = {}) {
   const { size = 9, bold = false, italic = false, color = INK, align = 'left', maxWidth } = opts;
   doc.setFont('helvetica', bold ? 'bold' : italic ? 'italic' : 'normal');
-  if (italic) doc.setFont('helvetica', 'italic');
   doc.setFontSize(size);
   doc.setTextColor(color[0], color[1], color[2]);
   const s = str ?? '';
@@ -43,81 +40,41 @@ function text(doc: jsPDF, str: string, x: number, y: number, opts: { size?: numb
   doc.text(s, x, y, { align, baseline: 'top' });
   return y + size * 0.42 + 1;
 }
-
-function line(doc: jsPDF, x1: number, y1: number, x2: number, y2: number, color = GRID, width = 0.3) {
+function line(doc: jsPDF, x1: number, y1: number, x2: number, y2: number, color: [number, number, number] = GRID, w = 0.2) {
   doc.setDrawColor(color[0], color[1], color[2]);
-  doc.setLineWidth(width);
+  doc.setLineWidth(w);
   doc.line(x1, y1, x2, y2);
 }
-
-function rect(doc: jsPDF, x: number, y: number, w: number, h: number, fill?: boolean | [number, number, number], stroke: [number, number, number] = GRID) {
+function rect(doc: jsPDF, x: number, y: number, w: number, h: number, fill?: [number, number, number], stroke: [number, number, number] = GRID, sw = 0.2) {
   doc.setDrawColor(stroke[0], stroke[1], stroke[2]);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(sw);
   if (fill) {
-    const fc: [number, number, number] = Array.isArray(fill) ? fill : BG_SOFT;
-    doc.setFillColor(fc[0], fc[1], fc[2]);
+    doc.setFillColor(fill[0], fill[1], fill[2]);
     doc.rect(x, y, w, h, 'FD');
   } else {
     doc.rect(x, y, w, h, 'S');
   }
 }
-
-function box(doc: jsPDF, x: number, y: number, w: number, label: string, value: string | number | undefined | null, opts: { labelSize?: number; valueSize?: number; h?: number; bold?: boolean } = {}) {
-  const h = opts.h ?? 14;
+function field(doc: jsPDF, x: number, y: number, w: number, h: number, label: string, value: string | number | undefined, opts: { labelSize?: number; valSize?: number; bold?: boolean; align?: 'left'|'center'|'right' } = {}) {
   rect(doc, x, y, w, h);
-  const labelSize = opts.labelSize ?? 7;
-  const valSize = opts.valueSize ?? 9;
-  doc.setFont('helvetica', 'bold').setFontSize(labelSize).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text(label.toUpperCase(), x + 2, y + 3.5, { baseline: 'top' });
-  doc.setFont('helvetica', opts.bold ? 'bold' : 'normal').setFontSize(valSize).setTextColor(INK[0], INK[1], INK[2]);
+  doc.setFont('helvetica', 'bold').setFontSize(opts.labelSize ?? 6.5).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  doc.text(label.toUpperCase(), x + 1.5, y + 1.5, { baseline: 'top' });
+  doc.setFont('helvetica', opts.bold ? 'bold' : 'normal').setFontSize(opts.valSize ?? 9).setTextColor(INK[0], INK[1], INK[2]);
   const v = value === undefined || value === null || value === '' ? '—' : String(value);
-  const lines = doc.splitTextToSize(v, w - 4);
-  doc.text(lines, x + 2, y + 7, { baseline: 'top' });
-  return y + h;
+  const lines = doc.splitTextToSize(v, w - 3);
+  doc.text(lines, x + 1.5, y + 4.8, { baseline: 'top', align: opts.align ?? 'left' });
 }
-
-function header(doc: jsPDF, documentTitle: string, refLabel: string, refValue: string, sub?: string) {
-  // brand bar
-  doc.setFillColor(BRAND[0], BRAND[1], BRAND[2]);
-  doc.rect(0, 0, PAGE_W, 18, 'F');
-  doc.setFont('helvetica', 'bold').setFontSize(14).setTextColor(255, 255, 255);
-  doc.text('FREIGHTFLOW', MARGIN_L, 6, { baseline: 'top' });
-  doc.setFont('helvetica', 'normal').setFontSize(8);
-  doc.text('Logistics OS  ·  Antananarivo, Madagascar  ·  ops@freightflow.mg', MARGIN_L, 12, { baseline: 'top' });
-
-  // document title block
-  let y = 22;
-  doc.setFont('helvetica', 'bold').setFontSize(18).setTextColor(BRAND_DARK[0], BRAND_DARK[1], BRAND_DARK[2]);
-  doc.text(documentTitle, MARGIN_L, y, { baseline: 'top' });
-  y += 9;
-  if (sub) {
-    doc.setFont('helvetica', 'italic').setFontSize(9).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-    doc.text(sub, MARGIN_L, y, { baseline: 'top' });
-    y += 5;
-  }
-
-  // Reference box on right
-  const refW = 70;
-  const refX = PAGE_W - MARGIN_R - refW;
-  rect(doc, refX, 22, refW, 16, BG_SOFT, BRAND);
+function box(doc: jsPDF, x: number, y: number, w: number, h: number, title: string, body?: string) {
+  rect(doc, x, y, w, h);
   doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text(refLabel.toUpperCase(), refX + 3, 24, { baseline: 'top' });
-  doc.setFont('helvetica', 'bold').setFontSize(13).setTextColor(BRAND_DARK[0], BRAND_DARK[1], BRAND_DARK[2]);
-  doc.text(String(refValue), refX + 3, 29, { baseline: 'top' });
-  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text(`Issued: ${new Date().toLocaleDateString()}`, refX + 3, 35, { baseline: 'top' });
-
-  return Math.max(y + 4, 40);
+  doc.text(title.toUpperCase(), x + 1.5, y + 1.5, { baseline: 'top' });
+  if (body) {
+    doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
+    const lines = doc.splitTextToSize(body, w - 3);
+    doc.text(lines, x + 1.5, y + 5, { baseline: 'top' });
+  }
 }
-
-function footer(doc: jsPDF, pageNum: number, total: number) {
-  const fy = 290;
-  line(doc, MARGIN_L, fy - 2, PAGE_W - MARGIN_R, fy - 2);
-  doc.setFont('helvetica', 'italic').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('Document generated by FreightFlow Logistics OS — computer-generated, no signature required.', MARGIN_L, fy, { baseline: 'top' });
-  doc.text(`Page ${pageNum} / ${total}`, PAGE_W - MARGIN_R, fy, { align: 'right', baseline: 'top' });
-}
-
+function hline(doc: jsPDF, y: number) { line(doc, MARGIN_L, y, PAGE_W - MARGIN_R, y, GRID, 0.2); }
 function fmtDate(d?: string) {
   if (!d) return '—';
   const dt = new Date(d);
@@ -127,8 +84,12 @@ function fmtDate(d?: string) {
 function fmtMoney(n: number, cur = 'USD') {
   try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur, maximumFractionDigits: 2 }).format(n); } catch { return `${cur} ${n.toFixed(2)}`; }
 }
-function fmtNum(n: number, digits = 2) {
-  return new Intl.NumberFormat('en-US', { minimumFractionDigits: n % 1 ? digits : 0, maximumFractionDigits: digits }).format(n);
+function footer(doc: jsPDF, pageNum: number, total: number, color = BRAND) {
+  const fy = 287;
+  line(doc, MARGIN_L, fy - 2, PAGE_W - MARGIN_R, fy - 2, color, 0.3);
+  doc.setFont('helvetica', 'italic').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  doc.text('Generated by FreightFlow Logistics OS — computer-generated document.', MARGIN_L, fy, { baseline: 'top' });
+  doc.text(`Page ${pageNum} / ${total}`, PAGE_W - MARGIN_R, fy, { align: 'right', baseline: 'top' });
 }
 
 // ============================================================
@@ -136,406 +97,444 @@ function fmtNum(n: number, digits = 2) {
 // ============================================================
 export function generateShipmentBL(s: Shipment): Blob {
   const isAir = s.mode === 'air';
+  if (!isAir) return generateFIATABL(s);   // delegate sea B/L to FIATA-style layout
+
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  let y = 12;
+  // --- Brand bar ---
+  doc.setFillColor(BRAND[0], BRAND[1], BRAND[2]);
+  doc.rect(0, 0, PAGE_W, 16, 'F');
+  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(255, 255, 255);
+  doc.text('FREIGHTFLOW', MARGIN_L, 6, { baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(255, 255, 255);
+  doc.text('Logistics OS · Antananarivo, Madagascar · ops@freightflow.mg', MARGIN_L, 12, { baseline: 'top' });
+  doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(255, 255, 255);
+  doc.text('AIR WAYBILL — NON-NEGOTIABLE', PAGE_W - MARGIN_R, 7, { align: 'right', baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(8);
+  doc.text(`Issued ${fmtDate(new Date().toISOString())}`, PAGE_W - MARGIN_R, 11.5, { align: 'right', baseline: 'top' });
+  y = 20;
 
-  // ---- HEADER ----
-  let y = header(doc, isAir ? 'AIR WAYBILL' : 'BILL OF LADING',
-    isAir ? 'MAWB Number' : 'B/L Number',
-    s.mawbOrBl,
-    isAir ? 'Non-negotiable Air Waybill (IATA Resolution 600a)' : 'Original — negotiable Marine Bill of Lading');
-
-  // ---- Shipper / Consignee / Notify grid ----
-  const colW = (CONTENT_W) / 3;
-  const addrH = 32;
-  const shipperY = y + 1;
-  rect(doc, MARGIN_L, shipperY, colW, addrH);
+  // --- AWB number block ---
+  const awbW = 70;
+  const awbX = PAGE_W - MARGIN_R - awbW;
+  rect(doc, MARGIN_L, y, 85, 22);
   doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('SHIPPER / EXPORTER', MARGIN_L + 2, shipperY + 2, { baseline: 'top' });
-  doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
-  let cy = shipperY + 6;
-  cy = text(doc, s.customerName, MARGIN_L + 2, cy, { size: 9, bold: true, maxWidth: colW - 4 });
-  text(doc, s.origin, MARGIN_L + 2, cy, { size: 8, maxWidth: colW - 4 });
+  doc.text('ISSUED BY', MARGIN_L + 2, y + 2, { baseline: 'top' });
+  doc.setFont('helvetica', 'bold').setFontSize(11).setTextColor(BRAND_DARK[0], BRAND_DARK[1], BRAND_DARK[2]);
+  text(doc, 'FreightFlow Logistics SARL', MARGIN_L + 2, y + 6, { size: 11, bold: true, color: BRAND_DARK });
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(INK[0], INK[1], INK[2]);
+  text(doc, 'Lot II M 86 Bis, Antananarivo 101', MARGIN_L + 2, y + 11, { size: 8 });
+  text(doc, 'Madagascar · NIF 200 123 456', MARGIN_L + 2, y + 14.5, { size: 8 });
+  text(doc, 'Tel: +261 20 22 123 45', MARGIN_L + 2, y + 17.5, { size: 8 });
 
-  const conY = shipperY;
-  const conLabel = s.direction === 'export' ? 'CONSIGNEE' : 'CONSIGNEE';
-  rect(doc, MARGIN_L + colW, conY, colW, addrH);
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text(conLabel, MARGIN_L + colW + 2, conY + 2, { baseline: 'top' });
-  doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
-  cy = conY + 6;
-  cy = text(doc, s.customerName, MARGIN_L + colW + 2, cy, { size: 9, bold: true, maxWidth: colW - 4 });
-  text(doc, s.destination, MARGIN_L + colW + 2, cy, { size: 8, maxWidth: colW - 4 });
+  rect(doc, awbX, y, awbW, 22, BG_SOFT, BRAND, 0.6);
+  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(BRAND_DARK[0], BRAND_DARK[1], BRAND_DARK[2]);
+  doc.text('AIR WAYBILL NUMBER', awbX + 2, y + 2, { baseline: 'top' });
+  doc.setFont('helvetica', 'bold').setFontSize(15).setTextColor(BRAND_DARK[0], BRAND_DARK[1], BRAND_DARK[2]);
+  doc.text(String(s.mawbOrBl), awbX + 2, y + 7, { baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  doc.text(`Shipper's Ref: ${s.reference}`, awbX + 2, y + 15, { baseline: 'top' });
+  doc.text(`${s.direction.toUpperCase()} · ${s.incoterm}`, awbX + 2, y + 18, { baseline: 'top' });
+  y += 26;
 
-  const notY = shipperY;
-  rect(doc, MARGIN_L + colW * 2, notY, colW, addrH);
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('NOTIFY PARTY / AGENT', MARGIN_L + colW * 2 + 2, notY + 2, { baseline: 'top' });
-  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
-  cy = notY + 6;
-  cy = text(doc, 'Same as consignee', MARGIN_L + colW * 2 + 2, cy, { size: 9, italic: true, maxWidth: colW - 4 });
-  text(doc, s.carrier + ' — local agent', MARGIN_L + colW * 2 + 2, cy, { size: 8, maxWidth: colW - 4 });
+  // --- Shipper / Consignee / Agent grid ---
+  const col3 = (CONTENT_W - 4) / 3;
+  field(doc, MARGIN_L, y, col3, 22, "Shipper's Name & Address", `${s.customerName}\n${s.origin}`);
+  field(doc, MARGIN_L + col3 + 2, y, col3, 22, 'Consignee\'s Name & Address', s.destination);
+  field(doc, MARGIN_L + 2 * (col3 + 2), y, col3, 22, 'Issuing Carrier\'s Agent', 'FreightFlow Logistics\nAntananarivo (TNR), MG');
+  y += 26;
 
-  y = shipperY + addrH + 2;
+  // --- Routing (box 2-rows) ---
+  const routingH = 18;
+  field(doc, MARGIN_L, y, col3, routingH, 'Airport of Departure (Addr. of first Carrier) & requested Routing', s.portOfLoading);
+  field(doc, MARGIN_L + col3 + 2, y, col3 * 0.5, routingH, 'To (1st)', s.portOfDischarge);
+  field(doc, MARGIN_L + col3 + 2 + col3 * 0.5 + 2, y, col3 * 0.5 - 2, routingH, 'By First Carrier', s.carrier);
+  field(doc, MARGIN_L + 2 * (col3 + 2), y, col3, routingH, 'Airport of Destination', s.portOfDischarge);
+  y += routingH + 2;
 
-  // ---- Routing grid ----
-  const rh = 32;
-  rect(doc, MARGIN_L, y, CONTENT_W, rh);
-  // Split into 4 columns
-  const rW = CONTENT_W / 4;
-  const rx0 = MARGIN_L, rx1 = MARGIN_L + rW, rx2 = MARGIN_L + rW * 2, rx3 = MARGIN_L + rW * 3;
-  line(doc, rx1, y, rx1, y + rh);
-  line(doc, rx2, y, rx2, y + rh);
-  line(doc, rx3, y, rx3, y + rh);
-  const cell = (label: string, val: string, x: number) => {
-    doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-    doc.text(label.toUpperCase(), x + 2, y + 2, { baseline: 'top' });
-    doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(INK[0], INK[1], INK[2]);
-    const lines = doc.splitTextToSize(val || '—', rW - 4);
-    doc.text(lines, x + 2, y + 6, { baseline: 'top' });
-  };
-  cell(isAir ? 'Airport of Departure' : 'Port of Loading', s.portOfLoading, rx0);
-  cell(isAir ? 'Airport of Destination' : 'Port of Discharge', s.portOfDischarge, rx1);
-  cell(isAir ? 'Carrier / Flight' : 'Carrier / Vessel', `${s.carrier}  ·  ${s.vesselOrFlight}`, rx2);
-  cell('Incoterms', s.incoterm || '—', rx3);
-  y += rh + 2;
+  // --- Flight/date, terms, weight ---
+  const wh = 18;
+  field(doc, MARGIN_L, y, 50, wh, 'Flight / Date', `${s.vesselOrFlight || '—'}\nETD ${fmtDate(s.etd)}`);
+  field(doc, MARGIN_L + 52, y, 30, wh, 'Currency', s.currency);
+  field(doc, MARGIN_L + 84, y, 25, wh, 'CHGS Code', 'PPD');
+  field(doc, MARGIN_L + 111, y, 35, wh, 'WT/VAL', 'PREPAID');
+  field(doc, MARGIN_L + 148, y, 38, wh, 'Other', 'PREPAID');
+  y += wh + 2;
 
-  // ---- Schedule / reference row ----
-  const schedH = 14;
-  const cols = 6;
-  const sw = CONTENT_W / cols;
-  const rowFields: [string, string][] = [
-    ['Reference No.', s.reference],
-    ['Direction', `${s.mode.toUpperCase()} / ${s.direction.toUpperCase()}`],
-    ['ETD', fmtDate(s.etd)],
-    ['ETA', fmtDate(s.eta)],
-    ['ATD', s.atd ? fmtDate(s.atd) : '—'],
-    ['ATA', s.ata ? fmtDate(s.ata) : '—'],
-  ];
-  rowFields.forEach(([lbl, val], i) => {
-    box(doc, MARGIN_L + i * sw, y, sw, lbl, val, { h: schedH, bold: true });
-  });
-  y += schedH + 3;
-
-  // ---- Cargo table header ----
+  // --- Cargo table ---
+  const tblTop = y;
   rect(doc, MARGIN_L, y, CONTENT_W, 7, BG_SOFT);
   doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  const tblCols: [string, number, 'left' | 'right' | 'center'][] = isAir
-    ? [
-        ['Pieces', 20, 'right'],
-        ['Gross Weight (kg)', 32, 'right'],
-        ['Rate Class', 18, 'center'],
-        ['Chargeable Weight (kg)', 38, 'right'],
-        ['Rate/kg', 20, 'right'],
-        ['Nature & Quantity of Goods', 0, 'left'],
-      ]
-    : [
-        ['Marks & Numbers', 40, 'left'],
-        ['Packages', 18, 'right'],
-        ['Description of Goods', 0, 'left'],
-        ['Gross Weight (kg)', 30, 'right'],
-        ['Measurement (CBM)', 30, 'right'],
-      ];
-  let cx = MARGIN_L + 2;
-  const totalW = tblCols.reduce((s, [, w]) => s + (w || 0), 0);
-  const flexIdx = tblCols.findIndex(([, w]) => !w);
-  if (flexIdx >= 0) tblCols[flexIdx][1] = CONTENT_W - 4 - (totalW);
-  tblCols.forEach(([lbl, w, a]) => {
-    doc.text(lbl.toUpperCase(), a === 'right' ? cx + w - 2 : a === 'center' ? cx + w / 2 : cx, y + 2, { align: a, baseline: 'top' });
-    cx += w;
-  });
+  doc.text('PIECES', MARGIN_L + 2, y + 2, { baseline: 'top' });
+  doc.text('GROSS WEIGHT (kg)', MARGIN_L + 25, y + 2, { baseline: 'top' });
+  doc.text('KG/LB', MARGIN_L + 58, y + 2, { baseline: 'top' });
+  doc.text('RATE CLASS', MARGIN_L + 68, y + 2, { baseline: 'top' });
+  doc.text('CHARGEABLE WEIGHT (kg)', MARGIN_L + 82, y + 2, { baseline: 'top' });
+  doc.text('RATE/kg', MARGIN_L + 125, y + 2, { baseline: 'top' });
+  doc.text('NATURE & QUANTITY OF GOODS', MARGIN_L + 140, y + 2, { baseline: 'top' });
   y += 7;
-
-  // ---- Cargo row ----
-  const rowH = 18;
-  rect(doc, MARGIN_L, y, CONTENT_W, rowH);
-  cx = MARGIN_L + 2;
-  // vertical dividers
-  let ax = MARGIN_L;
-  tblCols.forEach(([, w]) => { ax += w; if (ax < MARGIN_L + CONTENT_W - 0.5) line(doc, ax, y, ax, y + rowH); });
+  const chg = s.chargeableWeight ?? Math.max(s.weight, (s.volume * 1e6) / 6000);
   doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
-  const chg = s.chargeableWeight ?? s.weight;
-  const rowVals = isAir
-    ? [String(s.pieces), fmtNum(s.weight, 1), 'Q', fmtNum(chg, 1), s.totalAmount && chg ? fmtNum(s.totalAmount / chg, 2) : '—']
-    : [s.mawbOrBl.slice(0, 18), String(s.pieces)];
-  rowVals.forEach((v, i) => {
-    const [, w, a] = tblCols[i];
-    const tx = a === 'right' ? cx + w - 2 : a === 'center' ? cx + w / 2 : cx;
-    doc.text(v, tx, y + 4, { align: a, baseline: 'top' });
-    cx += w;
-  });
-  // Last col — commodity
-  const last = tblCols[tblCols.length - 1];
-  const lx = MARGIN_L + tblCols.slice(0, -1).reduce((s, [, w]) => s + w, 0) + 2;
-  const lw = last[1] - 4;
-  const commLines = doc.splitTextToSize(s.commodity, lw);
-  doc.text(commLines, lx, y + 4, { baseline: 'top' });
-  y += rowH;
+  doc.text(String(s.pieces), MARGIN_L + 2, y + 3, { baseline: 'top' });
+  doc.text(fmtNum(s.weight, 1), MARGIN_L + 25, y + 3, { baseline: 'top' });
+  doc.text('K', MARGIN_L + 58, y + 3, { baseline: 'top' });
+  doc.text('Q', MARGIN_L + 68, y + 3, { baseline: 'top' });
+  doc.text(fmtNum(chg, 1), MARGIN_L + 82, y + 3, { baseline: 'top' });
+  const ratePerKg = chg > 0 ? s.totalAmount / chg : 0;
+  doc.text(ratePerKg.toFixed(2), MARGIN_L + 125, y + 3, { baseline: 'top' });
+  const commLines = doc.splitTextToSize(s.commodity, CONTENT_W - 142);
+  doc.text(commLines, MARGIN_L + 140, y + 3, { baseline: 'top' });
+  const rowH = Math.max(12, commLines.length * 4.2 + 4);
+  rect(doc, MARGIN_L, tblTop, CONTENT_W, 7 + rowH);
+  // vertical separators
+  [24, 38, 55, 78, 122, 138].forEach(xx => line(doc, MARGIN_L + xx, tblTop, MARGIN_L + xx, tblTop + 7 + rowH));
+  y += rowH + 2;
 
-  // ---- Totals row (AWB) or totals (B/L) ----
-  if (isAir) {
-    const tH = 8;
-    rect(doc, MARGIN_L, y, CONTENT_W, tH);
-    cx = MARGIN_L + 2;
-    let ax = MARGIN_L;
-    tblCols.forEach(([, w]) => { ax += w; if (ax < MARGIN_L + CONTENT_W - 0.5) line(doc, ax, y, ax, y + tH); });
-    const totals = ['', String(s.pieces), '', '', fmtNum(chg, 1), 'TOTAL'];
-    doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(INK[0], INK[1], INK[2]);
-    totals.forEach((v, i) => {
-      const [, w, a] = tblCols[i];
-      const tx = a === 'right' ? cx + w - 2 : a === 'center' ? cx + w / 2 : cx;
-      doc.text(v, tx, y + 2.5, { align: a, baseline: 'top' });
-      cx += w;
-    });
-    y += tH + 2;
-  } else {
-    y += 3;
-  }
+  // --- Prepaid totals ---
+  field(doc, MARGIN_L, y, CONTENT_W * 0.5, 14, 'Weight Charge (Prepaid)', fmtMoney(s.totalAmount * 0.85, s.currency));
+  field(doc, MARGIN_L + CONTENT_W * 0.5 + 2, y, CONTENT_W * 0.5 - 2, 14, 'Other Charges', fmtMoney(s.totalAmount * 0.15, s.currency));
+  y += 16;
+  field(doc, MARGIN_L, y, CONTENT_W * 0.5, 14, 'Total Prepaid', fmtMoney(s.totalAmount, s.currency), { bold: true });
+  field(doc, MARGIN_L + CONTENT_W * 0.5 + 2, y, CONTENT_W * 0.5 - 2, 14, 'Declared Value for Carriage', fmtMoney(s.totalAmount * 1.1, s.currency));
+  y += 16;
 
-  // ---- Charges summary ----
-  y += 2;
-  const ch = 28;
-  rect(doc, MARGIN_L, y, CONTENT_W, ch);
-  line(doc, MARGIN_L + CONTENT_W / 2, y, MARGIN_L + CONTENT_W / 2, y + ch);
-  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('WEIGHT / CHARGE PREPAID/COLLECT', MARGIN_L + 3, y + 3, { baseline: 'top' });
-  doc.text('OTHER CHARGES', MARGIN_L + CONTENT_W / 2 + 3, y + 3, { baseline: 'top' });
-  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
-  doc.text(`Freight: ${fmtMoney(s.totalAmount, s.currency)}`, MARGIN_L + 3, y + 9, { baseline: 'top' });
-  doc.text(`Prepaid  ·  ${s.incoterm}`, MARGIN_L + 3, y + 15, { baseline: 'top' });
-  doc.text('Customs clearance, origin handling,', MARGIN_L + CONTENT_W / 2 + 3, y + 9, { baseline: 'top', maxWidth: CONTENT_W / 2 - 6 });
-  doc.text('documentation, and security screening', MARGIN_L + CONTENT_W / 2 + 3, y + 14, { baseline: 'top', maxWidth: CONTENT_W / 2 - 6 });
-  doc.text('as per service agreement.', MARGIN_L + CONTENT_W / 2 + 3, y + 19, { baseline: 'top', maxWidth: CONTENT_W / 2 - 6 });
-  y += ch + 2;
+  // --- Handling info ---
+  box(doc, MARGIN_L, y, CONTENT_W, 28, 'Handling Information',
+    `${s.notes || '—'}\n\nChargeable weight computed per IATA 1:6000 volumetric formula. Dimensions: per shipper\'s declaration. Dangerous Goods: NOT RESTRICTED.`);
+  y += 30;
 
-  // ---- Handling info ----
-  const hiH = 30;
-  rect(doc, MARGIN_L, y, CONTENT_W, hiH);
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('HANDLING INFORMATION / REMARKS', MARGIN_L + 3, y + 3, { baseline: 'top' });
-  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
-  const notes = [
-    `Commodity: ${s.commodity}`,
-    s.notes ? `Notes: ${s.notes}` : '',
-    isAir
-      ? `Chargeable weight computed per IATA 1:6000 volumetric formula. Pieces: ${s.pieces}. Gross: ${fmtNum(s.weight,1)} kg. Volumetric: ${fmtNum((s.volume*1e6)/6000,1)} kg. Billed: ${fmtNum(chg,1)} kg.`
-      : `FCL/LCL as booked. Total ${s.pieces} packages, ${fmtNum(s.weight,1)} kg gross, ${fmtNum(s.volume,3)} CBM.`,
-    s.hsCode ? `HS Code: ${s.hsCode}${s.hsDescription ? ' — ' + s.hsDescription : ''}` : '',
-  ].filter(Boolean).join('\n');
-  doc.text(doc.splitTextToSize(notes, CONTENT_W - 6), MARGIN_L + 3, y + 8, { baseline: 'top', maxWidth: CONTENT_W - 6 });
-  y += hiH + 3;
-
-  // ---- Shipper cert / Carrier cert boxes ----
-  const sigH = 22;
-  const sigW = (CONTENT_W - 3) / 2;
-  // Shipper
-  rect(doc, MARGIN_L, y, sigW, sigH);
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text(isAir ? 'SHIPPER\'S CERTIFICATION' : 'SHIPPED ON BOARD IN APPARENT GOOD ORDER', MARGIN_L + 3, y + 3, { baseline: 'top' });
-  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(INK[0], INK[1], INK[2]);
-  doc.text(doc.splitTextToSize(
-    isAir
-      ? 'Shipper certifies that the particulars on the face hereof are correct and agrees to the carrier\'s conditions of carriage.'
-      : 'Received by the Carrier from the Shipper in apparent good order and condition (unless otherwise noted herein) the total number or quantity of Containers or other packages or units indicated for carriage subject to all the terms hereof.',
-    sigW - 6
-  ), MARGIN_L + 3, y + 8, { baseline: 'top' });
-  line(doc, MARGIN_L + 5, y + sigH - 5, MARGIN_L + sigW - 5, y + sigH - 5);
-  doc.setFont('helvetica', 'italic').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('Shipper / Authorised signatory', MARGIN_L + 5, y + sigH - 3, { baseline: 'bottom' });
-
-  // Carrier
-  const sx = MARGIN_L + sigW + 3;
-  rect(doc, sx, y, sigW, sigH);
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text(isAir ? 'CARRIER\'S EXECUTION' : 'CARRIER / ISSUING AGENT', sx + 3, y + 3, { baseline: 'top' });
-  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(INK[0], INK[1], INK[2]);
-  doc.text(doc.splitTextToSize(
-    `Executed by FreightFlow on behalf of ${s.carrier} at Antananarivo on ${fmtDate(new Date().toISOString())}.`,
-    sigW - 6
-  ), sx + 3, y + 8, { baseline: 'top' });
-  line(doc, sx + 5, y + sigH - 5, sx + sigW - 5, y + sigH - 5);
-  doc.setFont('helvetica', 'italic').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text(`${s.carrier} — as carrier`, sx + 5, y + sigH - 3, { baseline: 'bottom' });
+  // --- Signatures ---
+  const sigH = 16;
+  box(doc, MARGIN_L, y, CONTENT_W * 0.48, sigH, "Shipper's Certification", `By: ${s.customerName}\nDate: ${fmtDate(new Date().toISOString())}`);
+  box(doc, MARGIN_L + CONTENT_W * 0.52, y, CONTENT_W * 0.48, sigH, "Carrier's Execution", `FreightFlow as agent for ${s.carrier}\nPlace: Antananarivo, ${fmtDate(new Date().toISOString())}`);
 
   footer(doc, 1, 1);
   return doc.output('blob');
 }
 
 // ============================================================
-// INVOICE — professional A4
+// FIATA MULTIMODAL TRANSPORT BILL OF LADING (FBL)
+// Official FIATA-style B/L — used for FCL/LCL sea freight.
+// Layout modelled on the FIATA FBL (ICC-UNCTAD) form:
+//   - Yellow/blue FIATA identity block top-left
+//   - Shipper / Consignee / Notify in numbered boxes (1,2,3)
+//   - Place/port of receipt (4), Vessel (5), Port of loading (6),
+//     Port of discharge (7), Place of delivery (8)
+//   - Marks & Nos (9), Number/kind of pkgs (10), Description (11),
+//     Gross weight (12), Measurement (13)
+//   - Freight & charges (14), Number of originals (15), Place/date (16),
+//     Signature (17)
+// ============================================================
+function generateFIATABL(s: Shipment): Blob {
+  const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+  const BLUE = [25, 65, 120] as [number, number, number];
+  const GOLD = [190, 150, 60] as [number, number, number];
+  const W = CONTENT_W;
+  let y = 10;
+
+  // ===== HEADER =====
+  // FIATA-style header band
+  doc.setFillColor(BLUE[0], BLUE[1], BLUE[2]);
+  doc.rect(0, 0, PAGE_W, 24, 'F');
+  // gold accent
+  doc.setFillColor(GOLD[0], GOLD[1], GOLD[2]);
+  doc.rect(0, 24, PAGE_W, 1.5, 'F');
+
+  doc.setFont('helvetica', 'bold').setFontSize(18).setTextColor(255, 255, 255);
+  doc.text('FIATA', MARGIN_L, 5, { baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(220, 230, 245);
+  doc.text('Fédération Internationale des Associations de Transitaires et Assimilés', MARGIN_L, 12, { baseline: 'top' });
+  doc.setFont('helvetica', 'bold').setFontSize(9).setTextColor(255, 255, 255);
+  doc.text('MULTIMODAL TRANSPORT BILL OF LADING', MARGIN_L, 16, { baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(220, 230, 245);
+  doc.text('Negotiable · Subject to UNCTAD/ICC Rules for Multimodal Transport Documents (ICC Publication 481)', MARGIN_L, 20, { baseline: 'top' });
+
+  // Negotiable/Non-negotiable mark on right
+  doc.setFont('helvetica', 'bold').setFontSize(14).setTextColor(GOLD[0], GOLD[1], GOLD[2]);
+  doc.text('NEGOTIABLE', PAGE_W - MARGIN_R, 5, { align: 'right', baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(7).setTextColor(220, 230, 245);
+  doc.text(`B/L No. ${s.mawbOrBl}`, PAGE_W - MARGIN_R, 11, { align: 'right', baseline: 'top' });
+  doc.text(`Shipper's Ref: ${s.reference}`, PAGE_W - MARGIN_R, 14.5, { align: 'right', baseline: 'top' });
+  doc.text(`Carrier's Ref: FLOW-${s.reference.slice(-6)}`, PAGE_W - MARGIN_R, 17.5, { align: 'right', baseline: 'top' });
+  y = 30;
+
+  // ===== 1 Shipper, 2 Consignee, 3 Notify =====
+  const third = (W - 2) / 3;
+  field(doc, MARGIN_L, y, third, 24, '1. Shipper (full name, address, country)',
+    `${s.customerName}\n${s.origin}`);
+  field(doc, MARGIN_L + third + 1, y, third, 24, '2. Consignee (full name, address, country) — TO ORDER',
+    `${s.customerName} or order\n${s.destination}`);
+  field(doc, MARGIN_L + 2 * (third + 1), y, third, 24, '3. Notify Party (full name, address, country)',
+    s.destination);
+  y += 26;
+
+  // ===== 4 Place of receipt, 5 Vessel, 6 Port of loading =====
+  const h2 = 16;
+  field(doc, MARGIN_L, y, third, h2, '4. Place of Receipt (applicable when pre-carriage performed)', s.origin);
+  field(doc, MARGIN_L + third + 1, y, third, h2, '5. Ocean Vessel / Voyage No.', s.vesselOrFlight || 'TBD');
+  field(doc, MARGIN_L + 2 * (third + 1), y, third, h2, '6. Port of Loading', s.portOfLoading);
+  y += h2 + 2;
+
+  // ===== 7 Port of discharge, 8 Place of delivery, Freight payable =====
+  field(doc, MARGIN_L, y, third, h2, '7. Port of Discharge', s.portOfDischarge);
+  field(doc, MARGIN_L + third + 1, y, third, h2, '8. Place of Delivery', s.destination);
+  field(doc, MARGIN_L + 2 * (third + 1), y, third, h2, 'Freight Payable at', 'Antananarivo, MG');
+  y += h2 + 2;
+
+  // ===== Cargo table (boxes 9-13) =====
+  const tblY = y;
+  const colX = [
+    MARGIN_L,                               // 9 Marks left
+    MARGIN_L + 30,                          // 10 Nos & pkgs
+    MARGIN_L + 50,                          // 11 Description
+    MARGIN_L + W - 52,                      // 12 Gross weight
+    MARGIN_L + W - 25,                      // 13 Measurement
+  ];
+  // header
+  doc.setFillColor(BG_SOFT[0], BG_SOFT[1], BG_SOFT[2]);
+  doc.rect(MARGIN_L, y, W, 8, 'FD');
+  doc.setDrawColor(GRID[0], GRID[1], GRID[2]).setLineWidth(0.2);
+  for (let i = 0; i < colX.length - 1; i++) doc.line(colX[i + 1], y, colX[i + 1], y + 8);
+  doc.setFont('helvetica', 'bold').setFontSize(6.5).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  doc.text('9. MARKS & NOS', colX[0] + 1.5, y + 1.5, { baseline: 'top' });
+  doc.text('10. NOS & KIND\nOF PKGS', colX[1] + 1.5, y + 1.2, { baseline: 'top' });
+  doc.text('11. DESCRIPTION OF GOODS', colX[2] + 1.5, y + 1.5, { baseline: 'top' });
+  doc.text('12. GROSS WEIGHT\n(kg)', colX[3] + 1.5, y + 1.2, { baseline: 'top' });
+  doc.text('13. MEASUREMENT\n(CBM)', colX[4] + 1.5, y + 1.2, { baseline: 'top' });
+  y += 8;
+
+  const body = s.commodity + (s.notes ? `\n${s.notes}` : '');
+  const bodyLines = doc.splitTextToSize(body, colX[3] - colX[2] - 3);
+  const marks = (s.mawbOrBl + '\nC/NO. 1-' + s.pieces + '\nMADE IN MG').toUpperCase();
+  const marksLines = doc.splitTextToSize(marks, colX[1] - colX[0] - 3);
+  const pkgsStr = `${s.pieces} ${s.pieces === 1 ? 'PACKAGE' : 'PACKAGES'}\n${s.volume >= 14 ? '1×20GP' : s.volume >= 28 ? '1×40GP' : 'LCL'}`;
+  const rowH = Math.max(24, Math.max(bodyLines.length, marksLines.length) * 3.8 + 6);
+
+  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
+  doc.text(marksLines, colX[0] + 1.5, y + 2, { baseline: 'top' });
+  doc.setFont('helvetica', 'bold');
+  doc.text(pkgsStr, colX[1] + 1.5, y + 2, { baseline: 'top' });
+  doc.setFont('helvetica', 'normal');
+  doc.text(bodyLines, colX[2] + 1.5, y + 2, { baseline: 'top' });
+  doc.text(`${fmtNum(s.weight, 1)} kg`, colX[3] + 1.5, y + 2, { baseline: 'top' });
+  doc.text(`${fmtNum(s.volume, 3)} m³`, colX[4] + 1.5, y + 2, { baseline: 'top' });
+
+  // outer box + vertical separators for table
+  rect(doc, MARGIN_L, tblY, W, 8 + rowH);
+  for (let i = 1; i < colX.length; i++) line(doc, colX[i], tblY, colX[i], tblY + 8 + rowH);
+  y += 8 + rowH + 2;
+
+  // ===== 14 Freight & charges =====
+  const cH = 28;
+  const cW = (W - 2) / 2;
+  field(doc, MARGIN_L, y, cW, cH, '14. FREIGHT & CHARGES (prepaid as per booking)',
+    `Ocean Freight:  ${fmtMoney(s.totalAmount * 0.75, s.currency)}\nTHC/DOC:        ${fmtMoney(s.totalAmount * 0.10, s.currency)}\nInland trucking: ${fmtMoney(s.truckingCost ?? s.totalAmount * 0.15, s.currency)}\n${s.incoterm} — ${s.direction.toUpperCase()}`);
+  field(doc, MARGIN_L + cW + 2, y, cW, cH, 'PARTICULARS DECLARED BY SHIPPER',
+    `Total pieces:  ${s.pieces}\nTotal weight:  ${fmtNum(s.weight, 1)} kg\nTotal volume:  ${fmtNum(s.volume, 3)} m³\nDeclared value: ${fmtMoney(s.totalAmount, s.currency)}`);
+  y += cH + 2;
+
+  // ===== TOTAL BOXES + DATE / SIGN =====
+  const sigH = 30;
+  field(doc, MARGIN_L, y, W * 0.3, sigH, '15. NUMBER OF ORIGINAL Bs/L',
+    `THREE (3/3) issued,\none being accomplished,\nthe others to stand void.`);
+  field(doc, MARGIN_L + W * 0.3 + 2, y, W * 0.32 - 2, sigH, '16. PLACE AND DATE OF ISSUE',
+    `Antananarivo, Madagascar\n${fmtDate(new Date().toISOString())}\nETD: ${fmtDate(s.etd)}  ·  ETA: ${fmtDate(s.eta)}`);
+  field(doc, MARGIN_L + W * 0.62, y, W * 0.38, sigH, '17. SIGNED FOR THE CARRIER',
+    `FreightFlow Logistics SARL\nas Multimodal Transport Operator (MTO)\n\n________________________________\nAuthorized Signatory · ${s.carrier} agent`);
+  y += sigH + 4;
+
+  // ===== REVERSE TERMS (short clause block) =====
+  rect(doc, MARGIN_L, y, W, 28, [250, 250, 252], GRID);
+  doc.setFont('helvetica', 'bold').setFontSize(6.5).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  doc.text('TERMS AND CONDITIONS ON REVERSE (abridged)', MARGIN_L + 2, y + 2, { baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(6.5).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  const terms = 'This Bill of Lading, issued in the FIATA FBL format, is subject to the UNCTAD/ICC Rules for Multimodal Transport Documents (ICC Pub. 481). The Merchant agrees that the MTO\'s liability shall be as set out in those Rules and, where compulsorily applicable, the Hague-Visby Rules. Freight is deemed earned upon receipt of cargo and is non-returnable. The goods have been received in apparent good order and condition unless noted hereon. The Carrier/MTO shall not be liable for indirect or consequential loss.';
+  const tl = doc.splitTextToSize(terms, W - 4);
+  doc.text(tl, MARGIN_L + 2, y + 6, { baseline: 'top' });
+
+  footer(doc, 1, 1, BLUE);
+  return doc.output('blob');
+}
+
+// ============================================================
+// COMMERCIAL INVOICE — clean, professional
 // ============================================================
 export function generateInvoicePDF(inv: Invoice): Blob {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  let y = header(doc, 'COMMERCIAL INVOICE', 'Invoice No.', inv.number, 'Freight & logistics services');
+  let y = 12;
+  // brand header
+  doc.setFillColor(BRAND[0], BRAND[1], BRAND[2]);
+  doc.rect(0, 0, PAGE_W, 18, 'F');
+  doc.setFont('helvetica', 'bold').setFontSize(18).setTextColor(255, 255, 255);
+  doc.text('FREIGHTFLOW', MARGIN_L, 6, { baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(255, 255, 255);
+  doc.text('FreightFlow Logistics SARL · Antananarivo, Madagascar · ops@freightflow.mg', MARGIN_L, 12.5, { baseline: 'top' });
+  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(255, 255, 255);
+  doc.text('INVOICE', PAGE_W - MARGIN_R, 5, { align: 'right', baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(9);
+  doc.text(`No. ${inv.number}`, PAGE_W - MARGIN_R, 11, { align: 'right', baseline: 'top' });
+  y = 24;
 
-  // BILL TO / SHIP TO / terms boxes
-  const bw = (CONTENT_W - 6) / 3;
-  const bh = 30;
-  let by = y;
-  rect(doc, MARGIN_L, by, bw, bh);
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('BILL TO', MARGIN_L + 3, by + 3, { baseline: 'top' });
-  doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(INK[0], INK[1], INK[2]);
-  let cy = by + 8;
-  cy = text(doc, inv.customerName, MARGIN_L + 3, cy, { size: 10, bold: true, maxWidth: bw - 6 });
-  // fallback address — customer record not passed, just label
-  text(doc, 'Customer account on file', MARGIN_L + 3, cy, { size: 8, italic: true, maxWidth: bw - 6, color: MUTED });
-
-  rect(doc, MARGIN_L + bw + 3, by, bw, bh);
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('SHIPMENT REF', MARGIN_L + bw + 6, by + 3, { baseline: 'top' });
-  doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(INK[0], INK[1], INK[2]);
-  text(doc, inv.shipmentId || '—', MARGIN_L + bw + 6, by + 8, { size: 10, bold: true });
-
-  rect(doc, MARGIN_L + 2 * (bw + 3), by, bw, bh);
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('TERMS', MARGIN_L + 2 * (bw + 3) + 3, by + 3, { baseline: 'top' });
-  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
-  let ty = by + 8;
-  ty = text(doc, `Invoice date: ${fmtDate(inv.issueDate)}`, MARGIN_L + 2 * (bw + 3) + 3, ty, { size: 8 });
-  ty = text(doc, `Due date: ${fmtDate(inv.dueDate)}`, MARGIN_L + 2 * (bw + 3) + 3, ty, { size: 8 });
-  ty = text(doc, `Currency: ${inv.currency}`, MARGIN_L + 2 * (bw + 3) + 3, ty, { size: 8 });
-  ty = text(doc, `Status: ${inv.status.toUpperCase()}${inv.paidDate ? ' · paid ' + fmtDate(inv.paidDate) : ''}`, MARGIN_L + 2 * (bw + 3) + 3, ty, { size: 8, bold: true, color: inv.status === 'paid' ? [20, 130, 70] : inv.status === 'overdue' ? [180, 40, 40] : BRAND });
-
-  y = by + bh + 6;
+  // Bill-to / invoice meta boxes
+  const bw = (W - 4) / 3;
+  field(doc, MARGIN_L, y, bw, 24, 'BILL TO', inv.customerName);
+  field(doc, MARGIN_L + bw + 2, y, bw, 24, 'INVOICE DETAILS',
+    `Issue date: ${fmtDate(inv.issueDate)}\nDue date:   ${fmtDate(inv.dueDate)}\nStatus:     ${inv.status.toUpperCase()}\nCurrency:   ${inv.currency}`);
+  field(doc, MARGIN_L + 2 * (bw + 2), y, bw, 24, 'PAYMENT',
+    `Bank: BNI Madagascar\nSWIFT: BNIMMGAA\nIBAN: MG46 0000 5000 0100 1234 5678 90\nTerms: Net ${Math.max(0, Math.ceil((new Date(inv.dueDate).getTime() - new Date(inv.issueDate).getTime()) / 86400000))} days`);
+  y += 28;
 
   // Items table
-  const itemsTop = y;
-  const thH = 7;
-  rect(doc, MARGIN_L, y, CONTENT_W, thH, BG_SOFT);
+  const tblTop = y;
+  const colW = [85, 28, 25, 28];  // desc, qty, rate, amount
+  const colStarts = [MARGIN_L, MARGIN_L + colW[0], MARGIN_L + colW[0] + colW[1], MARGIN_L + colW[0] + colW[1] + colW[2]];
+  rect(doc, MARGIN_L, y, W, 7, BG_SOFT);
   doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('#', MARGIN_L + 3, y + 2, { baseline: 'top' });
-  doc.text('DESCRIPTION', MARGIN_L + 12, y + 2, { baseline: 'top' });
-  doc.text('AMOUNT', PAGE_W - MARGIN_R - 3, y + 2, { baseline: 'top', align: 'right' });
-  y += thH;
+  doc.text('DESCRIPTION', colStarts[0] + 2, y + 2, { baseline: 'top' });
+  doc.text('QTY', colStarts[1] + colW[1] - 2, y + 2, { align: 'right', baseline: 'top' });
+  doc.text('RATE', colStarts[2] + colW[2] - 2, y + 2, { align: 'right', baseline: 'top' });
+  doc.text('AMOUNT', colStarts[3] + colW[3] - 2, y + 2, { align: 'right', baseline: 'top' });
+  y += 7;
 
+  let subtotal = 0;
   inv.items.forEach((it, idx) => {
-    const desc = doc.splitTextToSize(it.description, CONTENT_W - 40);
-    const rh = Math.max(8, desc.length * 4.2 + 3);
-    if (idx % 2 === 1) rect(doc, MARGIN_L, y, CONTENT_W, rh, [250, 252, 255]);
+    const isLast = idx === inv.items.length - 1;
+    const lines = doc.splitTextToSize(it.description, colW[0] - 4);
+    const rh = Math.max(7, lines.length * 4 + 2);
+    if (idx % 2 === 1) doc.setFillColor(250, 251, 253).rect(MARGIN_L, y, W, rh, 'F');
     doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
-    doc.text(String(idx + 1), MARGIN_L + 3, y + 2, { baseline: 'top' });
-    doc.text(desc, MARGIN_L + 12, y + 2, { baseline: 'top' });
-    doc.setFont('helvetica', 'bold').setFontSize(9);
-    doc.text(fmtMoney(it.amount, inv.currency), PAGE_W - MARGIN_R - 3, y + 2, { baseline: 'top', align: 'right' });
+    doc.text(lines, colStarts[0] + 2, y + 1.5, { baseline: 'top' });
+    doc.text('1', colStarts[1] + colW[1] - 2, y + 2, { align: 'right', baseline: 'top' });
+    doc.text(fmtMoney(it.amount, inv.currency), colStarts[2] + colW[2] - 2, y + 2, { align: 'right', baseline: 'top' });
+    doc.text(fmtMoney(it.amount, inv.currency), colStarts[3] + colW[3] - 2, y + 2, { align: 'right', baseline: 'top' });
+    subtotal += it.amount;
     y += rh;
+    if (!isLast) line(doc, MARGIN_L, y, MARGIN_L + W, y, GRID, 0.15);
   });
+  rect(doc, MARGIN_L, tblTop, W, y - tblTop);  // outer border
+  for (let i = 1; i < colStarts.length; i++) line(doc, colStarts[i], tblTop, colStarts[i], y);
+  y += 2;
 
-  // bottom grid lines
-  line(doc, MARGIN_L, itemsTop, MARGIN_L, y);
-  line(doc, PAGE_W - MARGIN_R, itemsTop, PAGE_W - MARGIN_R, y);
-  line(doc, MARGIN_L, y, PAGE_W - MARGIN_R, y);
-
+  // totals (right aligned)
+  const totX = MARGIN_L + W - 60;
+  const totW = 60;
+  const tot = (label: string, value: string, bold = false, fill = false) => {
+    const h = 7;
+    if (fill) { doc.setFillColor(BRAND[0], BRAND[1], BRAND[2]); doc.rect(totX, y, totW, h, 'F'); }
+    doc.setFont('helvetica', bold ? 'bold' : 'normal').setFontSize(bold ? 11 : 9).setTextColor(fill ? 255 : INK[0], fill ? 255 : INK[1], fill ? 255 : INK[2]);
+    doc.text(label, totX + 3, y + 2, { baseline: 'top' });
+    doc.text(value, totX + totW - 3, y + 2, { align: 'right', baseline: 'top' });
+    y += h;
+  };
+  tot('Subtotal', fmtMoney(inv.subtotal, inv.currency));
+  tot('VAT / Tax (0%)', fmtMoney(inv.tax, inv.currency));
+  tot('TOTAL DUE', fmtMoney(inv.total, inv.currency), true, true);
   y += 4;
 
-  // Totals
-  const totW = 70;
-  const totX = PAGE_W - MARGIN_R - totW;
-  const line_ = (label: string, value: string, opts: { bold?: boolean; fill?: boolean | [number, number, number]; color?: [number, number, number] } = {}) => {
-    const lh = 7;
-    if (opts.fill) rect(doc, totX, y, totW, lh, opts.fill);
-    else line(doc, totX, y, PAGE_W - MARGIN_R, y);
-    doc.setFont('helvetica', opts.bold ? 'bold' : 'normal').setFontSize(opts.bold ? 11 : 9).setTextColor((opts.color || INK)[0], (opts.color || INK)[1], (opts.color || INK)[2]);
-    doc.text(label, totX + 3, y + 2, { baseline: 'top' });
-    doc.text(value, PAGE_W - MARGIN_R - 3, y + 2, { align: 'right', baseline: 'top' });
-    y += lh;
-  };
-  line_('Subtotal', fmtMoney(inv.subtotal, inv.currency));
-  line_('VAT / Tax', fmtMoney(inv.tax, inv.currency));
-  line_('TOTAL DUE', fmtMoney(inv.total, inv.currency), { bold: true, fill: BRAND, color: [255,255,255] });
-
-  y += 6;
-
-  // Payment / thanks
-  rect(doc, MARGIN_L, y, CONTENT_W, 30, BG_SOFT);
-  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(BRAND_DARK[0], BRAND_DARK[1], BRAND_DARK[2]);
-  doc.text('PAYMENT INSTRUCTIONS', MARGIN_L + 3, y + 3, { baseline: 'top' });
-  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(INK[0], INK[1], INK[2]);
-  const py = y + 8;
-  text(doc, 'Bank: Banque Centrale de Madagascar (correspondent) – details on statement', MARGIN_L + 3, py, { size: 8, maxWidth: CONTENT_W - 6 });
-  text(doc, `Please reference invoice ${inv.number} on all payments. Terms: Net ${Math.max(0, Math.ceil((new Date(inv.dueDate).getTime() - new Date(inv.issueDate).getTime()) / 86400000))} days.`, MARGIN_L + 3, py + 6, { size: 8, maxWidth: CONTENT_W - 6 });
-  text(doc, 'Thank you for your business — we appreciate the partnership. 🇲🇬', MARGIN_L + 3, py + 12, { size: 8, italic: true, color: MUTED, maxWidth: CONTENT_W - 6 });
-
-  // OOBO info if present
-  if (inv.einvoice) {
-    y += 34;
-    rect(doc, MARGIN_L, y, CONTENT_W, 12, [235, 250, 240], [80, 160, 110]);
-    doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(20, 90, 50);
-    doc.text('OOBO / DGI E-INVOICE (MADAGASCAR)', MARGIN_L + 3, y + 3, { baseline: 'top' });
-    doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(INK[0], INK[1], INK[2]);
-    const uid = inv.einvoice.ooboUid ? `UID: ${inv.einvoice.ooboUid}` : 'Draft — pending OOBO submission';
-    doc.text(uid, MARGIN_L + 3, y + 7.5, { baseline: 'top' });
-    doc.text(`NIF émetteur: ${inv.einvoice.nifEmitter}  ·  TVA: ${fmtMoney(inv.einvoice.tva, inv.currency)}  ·  TTC: ${fmtMoney(inv.einvoice.ttc, inv.currency)}`, MARGIN_L + 3, y + 7.5, { align: 'right', baseline: 'top' });
+  // Status stamp / paid
+  if (inv.status === 'paid') {
+    doc.setDrawColor(20, 140, 70).setLineWidth(0.8).setTextColor(20, 140, 70);
+    doc.setFont('helvetica', 'bold').setFontSize(14);
+    doc.roundedRect(totX, y + 2, totW, 10, 2, 2, 'S');
+    doc.text('PAID', totX + totW / 2, y + 5, { align: 'center', baseline: 'top' });
+    doc.setTextColor(INK[0], INK[1], INK[2]);
+    y += 14;
+  } else if (inv.status === 'overdue') {
+    doc.setDrawColor(180, 40, 40).setLineWidth(0.8).setTextColor(180, 40, 40);
+    doc.setFont('helvetica', 'bold').setFontSize(14);
+    doc.roundedRect(totX, y + 2, totW, 10, 2, 2, 'S');
+    doc.text('OVERDUE', totX + totW / 2, y + 5, { align: 'center', baseline: 'top' });
+    doc.setTextColor(INK[0], INK[1], INK[2]);
+    y += 14;
+  } else {
+    y += 4;
   }
+
+  // OOBO / e-invoice block
+  if (inv.einvoice) {
+    rect(doc, MARGIN_L, y, W, 16, [235, 250, 240], [80, 160, 110], 0.5);
+    doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(20, 90, 50);
+    doc.text('OOBO / DGI E-INVOICE (MADAGASCAR)', MARGIN_L + 3, y + 2, { baseline: 'top' });
+    doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(20, 90, 50);
+    doc.text(`UID: ${inv.einvoice.ooboUid ?? 'pending'}  ·  NIF Emitter: ${inv.einvoice.nifEmitter}  ·  HTVA: ${fmtMoney(inv.einvoice.htva, inv.currency)}  ·  VAT (${(inv.einvoice.tvaRate * 100).toFixed(0)}%): ${fmtMoney(inv.einvoice.tva, inv.currency)}  ·  TTC: ${fmtMoney(inv.einvoice.ttc, inv.currency)}  ·  Payment: ${inv.einvoice.paymentMethod.toUpperCase()}`, MARGIN_L + 3, y + 8, { baseline: 'top' });
+    y += 18;
+  }
+
+  // thank-you
+  doc.setFont('helvetica', 'italic').setFontSize(8).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  doc.text('Thank you for your business. 🇲🇬 Payment is due per agreed terms; bank details above.', MARGIN_L, y + 4, { baseline: 'top' });
 
   footer(doc, 1, 1);
   return doc.output('blob');
 }
 
 // ============================================================
-// QUOTE
+// QUOTATION
 // ============================================================
 export function generateQuotePDF(q: Quote): Blob {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  let y = header(doc, 'FREIGHT QUOTATION', 'Quote No.', q.number, `${q.mode.toUpperCase()} ${q.direction.toUpperCase()} · Valid until ${fmtDate(q.validUntil)}`);
+  let y = 12;
+  doc.setFillColor(BRAND[0], BRAND[1], BRAND[2]);
+  doc.rect(0, 0, PAGE_W, 18, 'F');
+  doc.setFont('helvetica', 'bold').setFontSize(18).setTextColor(255, 255, 255);
+  doc.text('FREIGHTFLOW', MARGIN_L, 6, { baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(255, 255, 255);
+  doc.text('FreightFlow Logistics SARL · Antananarivo, Madagascar · quotes@freightflow.mg', MARGIN_L, 12.5, { baseline: 'top' });
+  doc.setFont('helvetica', 'bold').setFontSize(16).setTextColor(255, 255, 255);
+  doc.text('FREIGHT QUOTATION', PAGE_W - MARGIN_R, 5, { align: 'right', baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(9);
+  doc.text(`No. ${q.number}`, PAGE_W - MARGIN_R, 11, { align: 'right', baseline: 'top' });
+  doc.text(`Valid until: ${fmtDate(q.validUntil)}`, PAGE_W - MARGIN_R, 14, { align: 'right', baseline: 'top' });
+  y = 24;
 
-  // Customer / route block
-  const bw = CONTENT_W / 2;
-  rect(doc, MARGIN_L, y, bw, 24);
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('PREPARED FOR', MARGIN_L + 3, y + 3, { baseline: 'top' });
-  doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(INK[0], INK[1], INK[2]);
-  let cy = y + 8;
-  cy = text(doc, q.customerName, MARGIN_L + 3, cy, { size: 10, bold: true, maxWidth: bw - 6 });
-  if (q.customerEmail) text(doc, q.customerEmail, MARGIN_L + 3, cy, { size: 8, color: MUTED, maxWidth: bw - 6 });
-
-  rect(doc, MARGIN_L + bw, y, bw, 24);
-  doc.setFont('helvetica', 'bold').setFontSize(7).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
-  doc.text('ROUTING', MARGIN_L + bw + 3, y + 3, { baseline: 'top' });
-  doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
-  cy = y + 8;
-  cy = text(doc, `${q.origin}  →  ${q.destination}`, MARGIN_L + bw + 3, cy, { size: 9, bold: true, maxWidth: bw - 6 });
-  text(doc, `${q.commodity} · ${fmtNum(q.weight,1)} kg · ${fmtNum(q.volume,3)} CBM`, MARGIN_L + bw + 3, cy, { size: 8, color: MUTED, maxWidth: bw - 6 });
-  y += 28;
+  // Customer & routing block
+  const bw = (W - 2) / 2;
+  field(doc, MARGIN_L, y, bw, 22, 'PREPARED FOR',
+    `${q.customerName}\n${q.customerEmail ?? ''}`);
+  field(doc, MARGIN_L + bw + 2, y, bw, 22, 'ROUTING',
+    `${q.mode.toUpperCase()} ${q.direction.toUpperCase()}\n${q.origin}  →  ${q.destination}\nCommodity: ${q.commodity} · ${fmtNum(q.weight, 1)} kg · ${fmtNum(q.volume, 3)} CBM`);
+  y += 26;
 
   // Items
-  rect(doc, MARGIN_L, y, CONTENT_W, 7, BG_SOFT);
+  rect(doc, MARGIN_L, y, W, 7, BG_SOFT);
   doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
   doc.text('CHARGE ITEM', MARGIN_L + 3, y + 2, { baseline: 'top' });
-  doc.text('AMOUNT', PAGE_W - MARGIN_R - 3, y + 2, { baseline: 'top', align: 'right' });
+  doc.text('AMOUNT (USD)', MARGIN_L + W - 3, y + 2, { align: 'right', baseline: 'top' });
   y += 7;
-
   const items: [string, number][] = [
     ['Freight charges (ocean/air)', q.freightRate],
     ['Customs processing & documentation', q.customsFee],
     ['Inland trucking & delivery', q.truckingFee],
   ];
-  items.forEach(([lbl, amt]) => {
-    rect(doc, MARGIN_L, y, CONTENT_W, 7);
+  items.forEach(([lbl, amt], i) => {
+    const rh = 7;
+    if (i % 2 === 1) doc.setFillColor(250, 251, 253).rect(MARGIN_L, y, W, rh, 'F');
     doc.setFont('helvetica', 'normal').setFontSize(9).setTextColor(INK[0], INK[1], INK[2]);
     doc.text(lbl, MARGIN_L + 3, y + 2, { baseline: 'top' });
-    doc.text(fmtMoney(amt, 'USD'), PAGE_W - MARGIN_R - 3, y + 2, { baseline: 'top', align: 'right' });
-    y += 7;
+    doc.text(fmtMoney(amt, 'USD'), MARGIN_L + W - 3, y + 2, { align: 'right', baseline: 'top' });
+    y += rh;
   });
-
-  rect(doc, MARGIN_L, y, CONTENT_W, 8, BRAND);
-  doc.setFont('helvetica', 'bold').setFontSize(10).setTextColor(255,255,255);
-  doc.text('TOTAL ALL-IN', MARGIN_L + 3, y + 2.5, { baseline: 'top' });
-  doc.text(fmtMoney(q.total, 'USD'), PAGE_W - MARGIN_R - 3, y + 2.5, { baseline: 'top', align: 'right' });
-  y += 12;
+  line(doc, MARGIN_L, y, MARGIN_L + W, y);
+  y += 1;
+  doc.setFont('helvetica', 'bold').setFontSize(12).setTextColor(BRAND_DARK[0], BRAND_DARK[1], BRAND_DARK[2]);
+  doc.text('ALL-IN TOTAL', MARGIN_L + 3, y + 2, { baseline: 'top' });
+  doc.text(fmtMoney(q.total, 'USD'), MARGIN_L + W - 3, y + 2, { align: 'right', baseline: 'top' });
+  y += 10;
 
   // T&Cs
-  rect(doc, MARGIN_L, y, CONTENT_W, 40, BG_SOFT);
-  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(BRAND_DARK[0], BRAND_DARK[1], BRAND_DARK[2]);
-  doc.text('TERMS & CONDITIONS', MARGIN_L + 3, y + 3, { baseline: 'top' });
-  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(INK[0], INK[1], INK[2]);
-  const terms = [
-    '• Rates are valid until the date shown above, subject to carrier space, security approval and bunker/fuel surcharge adjustments.',
-    '• Quoted amounts exclude insurance, duties, taxes (VAT/TVA) and storage beyond free time (7 days at CFS/yard).',
-    '• Transit times are estimates; no guarantees are made for carrier schedule changes, customs inspection delays, or force majeure.',
-    '• Dangerous goods / perishables require prior approval and may incur additional handling fees.',
-    '• Payment terms: 50% deposit on booking confirmation; balance due prior to document release.',
+  rect(doc, MARGIN_L, y, W, 42, [250, 250, 252], GRID);
+  doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  doc.text('TERMS & CONDITIONS', MARGIN_L + 3, y + 2, { baseline: 'top' });
+  doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(MUTED[0], MUTED[1], MUTED[2]);
+  const tc = [
+    '• Rates valid until date shown above, subject to carrier space, equipment availability and bunker/security surcharges.',
+    '• Quoted amounts exclude insurance, duties, taxes (VAT/TVA), demurrage, detention and storage beyond free time (7 days at CFS).',
+    '• Transit times are estimates; FreightFlow is not liable for carrier schedule changes, customs inspection delays or force majeure.',
+    '• Dangerous goods / perishables require prior written approval and may incur additional handling fees.',
+    '• Payment terms: 50% deposit on booking confirmation; balance due prior to document / cargo release.',
+    '• Quotation may be accepted by signed return, email confirmation or by tendering cargo against this reference.',
   ].join('\n');
-  doc.text(doc.splitTextToSize(terms, CONTENT_W - 6), MARGIN_L + 3, y + 8, { baseline: 'top', maxWidth: CONTENT_W - 6 });
+  doc.text(doc.splitTextToSize(tc, W - 6), MARGIN_L + 3, y + 6, { baseline: 'top' });
 
   footer(doc, 1, 1);
   return doc.output('blob');
@@ -553,4 +552,9 @@ export function downloadBlob(blob: Blob, filename: string) {
   a.click();
   document.body.removeChild(a);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// format number helper for docs
+function fmtNum(n: number, d: number) {
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: n % 1 ? d : 0, maximumFractionDigits: d }).format(n);
 }

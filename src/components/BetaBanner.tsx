@@ -8,7 +8,7 @@ export default function BetaBanner() {
   const [zen, setZen] = useState(false);
   const [online, setOnline] = useState(true);
   useEffect(() => {
-    const v = localStorage.getItem('ff_beta_banner_hide_v9_1');
+    const v = localStorage.getItem('ff_beta_banner_hide_b9_2');
     if (v !== '1') setHidden(false);
     const sync = () => setZen(document.documentElement.classList.contains('ff-zen'));
     sync();
@@ -28,9 +28,9 @@ export default function BetaBanner() {
   return (
     <div className="bg-gradient-to-r from-brand via-indigo-600 to-violet-600 text-white text-xs sm:text-sm py-2 px-3 sm:px-4 flex items-center justify-center gap-2 sm:gap-3 relative z-40">
       <Rocket className="w-4 h-4 animate-pulse shrink-0" />
-      <span className="font-bold shrink-0">FreightFlow BETA 9</span>
+      <span className="font-bold shrink-0">FreightFlow BETA 9.2</span>
       <span className="hidden sm:inline text-white/90">
-        — Full mobile support · offline PWA · tap-to-move yard · responsive tables · approval reminders · OOBO hardened
+        — Pro AWB/FIATA B/L & invoice PDFs · POL/POD autocomplete · Air chargeable weight calc · workflow nav · page transitions
       </span>
       <span className="sm:hidden text-white/90 flex items-center gap-1">
         <Smartphone className="w-3 h-3" /> Mobile-ready
@@ -41,7 +41,7 @@ export default function BetaBanner() {
         </span>
       )}
       <button
-        onClick={() => { setHidden(true); localStorage.setItem('ff_beta_banner_hide_v9_1', '1'); }}
+        onClick={() => { setHidden(true); localStorage.setItem('ff_beta_banner_hide_b9_2', '1'); }}
         className="ml-1 hover:bg-white/20 rounded p-1 shrink-0"
         title="Dismiss"
       >

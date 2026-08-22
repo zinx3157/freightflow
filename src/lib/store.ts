@@ -701,8 +701,8 @@ function save(db: DB) {
 
 // Toast bus — store dispatches toast events when important actions happen.
 // UI listens via window.addEventListener('ff:toast', ...).
-type ToastPayload = { title: string; description?: string; variant?: 'success'|'error'|'warning'|'info'|'shipment'|'email'|'ai'; duration?: number };
-function toast(p: ToastPayload) {
+export type ToastPayload = { title: string; description?: string; variant?: 'success'|'error'|'warning'|'info'|'shipment'|'email'|'ai'; duration?: number };
+export function toast(p: ToastPayload) {
   if (typeof window === 'undefined') return;
   try { window.dispatchEvent(new CustomEvent<ToastPayload>('ff:toast', { detail: p })); } catch {}
 }

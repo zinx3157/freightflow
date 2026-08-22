@@ -34,6 +34,8 @@ import {
 } from 'lucide-react';
 import { formatDate, formatDateTime, formatMoney, statusColor, titleCase, daysFromNow } from '@/lib/utils';
 import { generateShipmentBL, downloadBlob } from '@/lib/documents';
+import { toast } from '@/lib/store';
+import { appUrl } from '@/lib/appUrl';
 import HSClassifier from './HSClassifier';
 import CarrierBookingPanel from './CarrierBooking';
 import ContainerManifest from './ContainerManifest';
@@ -160,9 +162,21 @@ export default function ShipmentDetail({
               <Download className="w-4 h-4" /> {shipment.mode === 'air' ? 'Download AWB' : 'Download B/L'}
             </Button>
             <Button variant="outline" onClick={() => {
-              const url = `${window.location.origin}/portal/?t=${tokenFor(shipment.id)}`;
-              navigator.clipboard?.writeText(url);
-              alert(`Customer portal link copied:\n\n${url}\n\nShare this with your customer for live tracking.`);
+              const url = appUrl(`/portal/?t=${tokenFor(shipment.id)}`);
+              const doCopy = (text: string) => {
+                if (navigator.clipboard?.writeText) return navigator.clipboard.writeText(text);
+                // fallback
+                const ta = document.createElement('textarea');
+                ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                document.body.appendChild(ta); ta.select();
+                try { document.execCommand('copy'); } finally { document.body.removeChild(ta); }
+                return Promise.resolve();
+              };
+              doCopy(url).then(() => {
+                toast({ title: '🔗 Portal link copied', description: url, variant: 'success', duration: 4000 });
+              }).catch(() => {
+                prompt('Copy this portal link (Ctrl+C / ⌘+C):', url);
+              });
             }}>
               <Share2 className="w-4 h-4" /> Share Portal Link
             </Button>
