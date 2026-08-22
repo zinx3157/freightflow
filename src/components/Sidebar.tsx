@@ -302,17 +302,107 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
     </>
   );
 
-  // Mobile drawer
+  // Mobile menu: lightweight bottom sheet instead of the full blue desktop sidebar.
+  // This keeps the phone UI usable and makes the menu disappear immediately
+  // after a selection.
   if (mobileOpen !== undefined) {
     return (
       <>
         <div
-          className="ff-modal-backdrop fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
-          onClick={onCloseMobile}
+          className="ff-modal-backdrop fixed inset-0 bg-slate-950/35 z-40 md:hidden"
+          onClick={closeMobileDrawer}
           aria-hidden="true"
         />
-        <aside className="fixed inset-y-0 left-0 z-50 w-[78%] max-w-[18rem] bg-gradient-to-b from-brand to-brand-dark dark:from-slate-950 dark:to-slate-900 text-white flex flex-col shadow-2xl md:hidden ff-drawer-enter">
-          {content}
+        <aside
+          className="fixed inset-x-0 bottom-0 z-50 md:hidden bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 rounded-t-3xl shadow-2xl border-t border-slate-200 dark:border-slate-800 overflow-hidden ff-sheet-up"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile navigation"
+        >
+          <div className="mx-auto mt-2 h-1.5 w-12 rounded-full bg-slate-300 dark:bg-slate-700" />
+          <div className="px-4 py-3 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-10 h-10 rounded-2xl bg-brand text-white flex items-center justify-center shrink-0">
+                <Ship className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-bold leading-tight truncate">FreightFlow</div>
+                <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">Mobile menu · B9.5</div>
+              </div>
+            </div>
+            <button
+              onClick={closeMobileDrawer}
+              className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300"
+              aria-label="Close menu"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <nav className="max-h-[72dvh] overflow-y-auto px-3 py-3 pb-[calc(1rem+var(--safe-bottom))] space-y-4">
+            {SECTIONS.map((section) => {
+              const visibleItems = section.items.filter(it => canSee(it.perm));
+              if (visibleItems.length === 0) return null;
+              const SecIcon = section.icon;
+              return (
+                <div key={section.titleKey}>
+                  <div className="flex items-center gap-1.5 px-2 mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400 dark:text-slate-500">
+                    {SecIcon && <SecIcon className="w-3 h-3" />}
+                    {tt(`sec.${section.titleKey.replace('sec_', '')}`)}
+                  </div>
+                  <div className="grid grid-cols-1 gap-1">
+                    {visibleItems.map((item) => {
+                      const Icon = item.icon;
+                      const active = isActive(item.href);
+                      const label = tt(item.labelKey);
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={(e) => navigateFromMobileDrawer(item.href, e)}
+                          className={cn(
+                            'flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-semibold border transition-colors',
+                            active
+                              ? 'bg-brand text-white border-brand shadow-sm'
+                              : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-200 border-slate-100 dark:border-slate-800 active:bg-slate-100 dark:active:bg-slate-800'
+                          )}
+                        >
+                          <Icon className={cn('w-5 h-5 shrink-0', active ? 'text-white' : 'text-brand')} />
+                          <span className="flex-1 truncate">{label}</span>
+                          {item.badge && (
+                            <span className={cn(
+                              'text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0',
+                              active ? 'bg-white/20 text-white' :
+                              item.badge === 'AI' ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/40 dark:text-violet-200' :
+                              item.badge === '📱' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200' :
+                              item.badge === '!' ? 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200' :
+                              'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200'
+                            )}>
+                              {item.badge}
+                            </span>
+                          )}
+                          <ChevronRight className={cn('w-4 h-4 shrink-0', active ? 'text-white/80' : 'text-slate-300')} />
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+
+            {user && (
+              <div className="flex items-center gap-3 px-3 py-3 rounded-2xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${user.avatarColor} text-white flex items-center justify-center font-bold text-sm shrink-0`}>
+                  {user.initials}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold truncate">{user.name}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{roleLabel(user.role)}</div>
+                </div>
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+              </div>
+            )}
+          </nav>
         </aside>
       </>
     );
