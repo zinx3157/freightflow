@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { classifyCommodity, estimateDuty, HSCodeEntry } from '@/lib/hsCodes';
 import { Button, Badge, Input, Card } from './ui';
 import { Search, AlertTriangle, Snowflake, Skull, CheckCircle2, Loader2, Scale, FileDigit } from 'lucide-react';
+import HSOnlineAccess from './HSOnlineAccess';
 
 interface Props {
   commodity: string;
@@ -126,6 +127,9 @@ export default function HSClassifier({ commodity, destination = '', customsValue
       <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-3">
         Classifier uses 30+ common HS codes relevant to Madagascar/IO trade. Always verify with a licensed customs broker before declaration.
       </p>
+      <div className="mt-4">
+        <HSOnlineAccess query={query} hsCode={selected?.hs6 || initialHsCode || ''} />
+      </div>
     </Card>
   );
 }

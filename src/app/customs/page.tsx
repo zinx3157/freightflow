@@ -7,6 +7,7 @@ import { db } from '@/lib/store';
 import type { CustomsStatus } from '@/lib/types';
 import type { DB } from '@/lib/store';
 import { ShieldCheck, AlertTriangle, CheckCircle2, Clock, FileText } from 'lucide-react';
+import HSOnlineAccess from '@/components/HSOnlineAccess';
 import { formatDate, statusColor, titleCase } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -47,6 +48,8 @@ export default function CustomsPage() {
 
   return (
     <PageShell title="Customs Clearance" subtitle="Monitor and update customs status for all shipments.">
+      <HSOnlineAccess query="Madagascar tariff HS code" />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MiniStat icon={<Clock className="w-5 h-5" />} label="Pending Docs" value={stats.pending} color="amber" />
         <MiniStat icon={<FileText className="w-5 h-5" />} label="In Declaration / Inspection" value={stats.inspection} color="indigo" />
