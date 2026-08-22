@@ -2,8 +2,8 @@
  * Cache-first for static assets, network-first for HTML with offline shell fallback.
  * Scope-aware so mobile/PWA works at root and under /freightflow/ on GitHub Pages.
  */
-const CACHE = 'freightflow-b9-5-1-v2';
-const RUNTIME = 'freightflow-runtime-v2';
+const CACHE = 'freightflow-b9-5-2-mobile-v3';
+const RUNTIME = 'freightflow-runtime-mobile-v3';
 
 const scopePath = new URL(self.registration.scope).pathname.replace(/\/$/, '');
 const basePath = scopePath === '' ? '' : scopePath;
@@ -25,7 +25,13 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE && k !== RUNTIME).map((k) => caches.delete(k)))
+      Promise.all(
+        keys
+          // Clean every older FreightFlow cache, including caches created by a
+          // previous root-scoped or wrongly-scoped mobile install.
+          .filter((k) => k.startsWith('freightflow-') && k !== CACHE && k !== RUNTIME)
+          .map((k) => caches.delete(k))
+      )
     ).then(() => self.clients.claim())
   );
 });
