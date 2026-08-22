@@ -7,13 +7,14 @@ import { ToastProvider } from '@/components/Toast';
 import CopilotWrapper from '@/components/CopilotWrapper';
 import BetaBanner from '@/components/BetaBanner';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
+import { withBasePath } from '@/lib/basePath';
 
 export const metadata: Metadata = {
   title: 'FreightFlow — Logistics OS (Beta 9.5 "Customer Portal")',
   description: 'Air & sea freight ops with Kanban boards, Exceptions Center, Profitability BI, Carrier reliability, pro AWB/FIATA B/L, POL/POD autocomplete, IATA chargeable weight, WMS, yard, POD — the CargoWise alternative. Works offline.',
-  manifest: '/manifest.json',
+  manifest: withBasePath('/manifest.json'),
   appleWebApp: { capable: true, title: 'FreightFlow', statusBarStyle: 'black-translucent' },
-  icons: { icon: '/favicon.ico' },
+  icons: { icon: withBasePath('/favicon.ico') },
 };
 
 export const viewport: Viewport = {
@@ -27,7 +28,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="manifest" href={withBasePath('/manifest.json')} />
+        <link rel="apple-touch-icon" href={withBasePath('/icon-192.svg')} />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="FreightFlow" />

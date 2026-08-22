@@ -1,21 +1,24 @@
-/* FreightFlow Service Worker — Beta 9
+/* FreightFlow Service Worker — Beta 9.5.1
  * Cache-first for static assets, network-first for HTML with offline shell fallback.
- * Base-path aware (works at root AND under /freightflow/ on GitHub Pages).
+ * Scope-aware so mobile/PWA works at root and under /freightflow/ on GitHub Pages.
  */
-const CACHE = 'freightflow-b9-3-1-v1';
-const RUNTIME = 'freightflow-b9-runtime';
+const CACHE = 'freightflow-b9-5-1-v2';
+const RUNTIME = 'freightflow-runtime-v2';
 
-const basePath = self.registration?.scope?.includes('/freightflow') ? '/freightflow' : '';
-const OFFLINE_URL = basePath + '/';
+const scopePath = new URL(self.registration.scope).pathname.replace(/\/$/, '');
+const basePath = scopePath === '' ? '' : scopePath;
+const OFFLINE_URL = `${basePath}/`;
 const PRECACHE_URLS = [
-  basePath + '/',
-  basePath + '/manifest.json',
-  basePath + '/icon-192.svg',
+  `${basePath}/`,
+  `${basePath}/manifest.json`,
+  `${basePath}/icon-192.svg`,
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE_URLS)).then(() => self.skipWaiting())
+    caches.open(CACHE)
+      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -33,8 +36,9 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
+  if (basePath && !url.pathname.startsWith(`${basePath}/`)) return;
 
-  // HTML navigations: network-first with offline shell fallback
+  // HTML navigations: network-first with offline shell fallback.
   if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
     event.respondWith(
       fetch(req)
@@ -43,14 +47,12 @@ self.addEventListener('fetch', (event) => {
           caches.open(RUNTIME).then((c) => c.put(req, copy)).catch(() => {});
           return res;
         })
-        .catch(() =>
-          caches.match(req).then((cached) => cached || caches.match(OFFLINE_URL))
-        )
+        .catch(() => caches.match(req).then((cached) => cached || caches.match(OFFLINE_URL)))
     );
     return;
   }
 
-  // Static assets (JS/CSS/fonts/images): stale-while-revalidate
+  // Static assets: stale-while-revalidate, scoped to this app.
   if (/\.(js|css|woff2?|ttf|png|jpe?g|gif|svg|webp|ico|json)$/.test(url.pathname) ||
       url.pathname.includes('/_next/')) {
     event.respondWith(
@@ -68,7 +70,6 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Default: network-first with cache fallback
   event.respondWith(
     fetch(req)
       .then((res) => {
@@ -87,4 +88,36 @@ self.addEventListener('message', (event) => {
       clients.forEach((c) => c.postMessage({ type: 'queue-changed' }))
     );
   }
+});
+
+// Web Push Notifications
+self.addEventListener('push', (event) => {
+  let payload = { title: 'FreightFlow', body: 'You have a new update', tag: 'ff-default' };
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch {
+    try { payload.body = event.data.text(); } catch {}
+  }
+  const title = payload.title || 'FreightFlow';
+  const options = {
+    body: payload.body || '',
+    icon: `${basePath}/icon-192.svg`,
+    badge: `${basePath}/icon-192.svg`,
+    tag: payload.tag || 'ff-default',
+    data: payload.data || { url: `${basePath}/` },
+    vibrate: [100, 50, 100],
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || `${basePath}/`;
+  event.waitUntil((async () => {
+    const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of allClients) {
+      if (client.url === targetUrl && 'focus' in client) return client.focus();
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
+  })());
 });

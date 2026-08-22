@@ -5,6 +5,7 @@ import { db } from '@/lib/store';
 import { Card, Button, Input, Select, Field, Badge } from '@/components/ui';
 import { Ship, Plane, Truck, CheckCircle2, Quote, Shield, Clock, Award, Mail, Phone } from 'lucide-react';
 import PortAutocomplete from '@/components/PortAutocomplete';
+import { withBasePath } from '@/lib/basePath';
 
 // Public quote request page — no auth, no sidebar. Linked from footer of tracking page.
 export default function GetQuotePage() {
@@ -47,7 +48,7 @@ export default function GetQuotePage() {
           </div>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button onClick={() => setSubmitted(null)}>Submit another</Button>
-            <a href="/tracking"><Button variant="outline">Track a shipment</Button></a>
+            <a href={withBasePath('/tracking')}><Button variant="outline">Track a shipment</Button></a>
           </div>
         </Card>
       </div>
@@ -67,7 +68,7 @@ export default function GetQuotePage() {
               <div className="text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-widest">Logistics OS</div>
             </div>
           </div>
-          <a href="/tracking" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand">Track shipment →</a>
+          <a href={withBasePath('/tracking')} className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-brand">Track shipment →</a>
         </div>
       </header>
 

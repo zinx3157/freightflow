@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import PageShell from '@/components/PageShell';
 import { Card, Button, Badge, Input, Select, Field, Modal, EmptyState } from '@/components/ui';
 import { db } from '@/lib/store';
+import { withBasePath } from '@/lib/basePath';
 import type { Quote, ShipmentMode, ShipmentDirection, QuoteRequest } from '@/lib/types';
 import type { DB } from '@/lib/store';
 import { FileText, Plus, ArrowUpRight, Calendar, Weight, Box, Send, Check, X, Trash2, Download, Inbox, MessageSquare, Sparkles, ExternalLink } from 'lucide-react';
@@ -199,7 +200,7 @@ function QuoteRequestsInbox({ requests, onClose, onQuote, onDelete }: {
           <Badge color="violet">{requests.filter((q) => q.status === 'new').length} new</Badge>
         </div>
         <div className="flex items-center gap-2">
-          <a href="/get-quote" target="_blank" className="text-xs text-brand font-medium inline-flex items-center gap-1 hover:underline">
+          <a href={withBasePath('/get-quote')} target="_blank" className="text-xs text-brand font-medium inline-flex items-center gap-1 hover:underline">
             <ExternalLink className="w-3 h-3" /> Public quote form
           </a>
           <Button size="sm" variant="ghost" onClick={onClose}>Close</Button>

@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { withBasePath } from '@/lib/basePath';
 
 /**
  * Global error boundary for the App Router. Catches client-side JS errors
@@ -17,7 +18,7 @@ export default function Error({ error, reset }: { error: Error & { digest?: stri
   const hardReset = () => {
     try { sessionStorage.clear(); } catch {}
     // Don't clear localStorage (that would wipe all data); just reload.
-    window.location.href = '/';
+    window.location.href = withBasePath('/');
   };
 
   return (

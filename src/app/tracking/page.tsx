@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { formatDate, formatDateTime, statusColor, titleCase, daysFromNow, formatMoney } from '@/lib/utils';
 import { generateShipmentBL, downloadBlob } from '@/lib/documents';
+import { withBasePath } from '@/lib/basePath';
 
 const STAGES: { key: Shipment['status']; label: string; icon: React.ReactNode }[] = [
   { key: 'quoted', label: 'Quoted', icon: <CircleDot className="w-4 h-4" /> },
@@ -114,7 +115,7 @@ export default function TrackingPage() {
             We couldn't find a shipment matching <strong>{query}</strong>. Double-check your reference or request a quote for a new shipment.
           </p>
           <div className="mt-5 flex justify-center gap-2">
-            <a href="/get-quote"><Button variant="outline"><Quote className="w-4 h-4" /> Get a new quote</Button></a>
+            <a href={withBasePath('/get-quote')}><Button variant="outline"><Quote className="w-4 h-4" /> Get a new quote</Button></a>
           </div>
         </Card>
       )}
@@ -157,7 +158,7 @@ export default function TrackingPage() {
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Customers see the carbon footprint of their freight, calculated using GLEC framework factors.</p>
             </Card>
             <Card className="p-5">
-              <a href="/get-quote" className="block">
+              <a href={withBasePath('/get-quote')} className="block">
                 <Quote className="w-8 h-8 text-brand mb-2" />
                 <h4 className="font-semibold text-slate-900 dark:text-white flex items-center gap-1">Need a quote? <ExternalLink className="w-3.5 h-3.5" /></h4>
                 <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Request an all-in air, sea or road freight quote in under a minute.</p>
@@ -192,7 +193,7 @@ function ShipmentTracker({ s, portalToken }: { s: Shipment; portalToken: string 
             <Button variant="outline" size="sm" onClick={() => downloadBlob(generateShipmentBL(s), `${s.reference}_${s.mode === 'air' ? 'AWB' : 'BL'}.pdf`)}>
               <Download className="w-3.5 h-3.5" /> Download {s.mode === 'air' ? 'AWB' : 'B/L'}
             </Button>
-            <Button size="sm" onClick={() => window.open(`/portal/?t=${portalToken}`, '_blank')}>
+            <Button size="sm" onClick={() => window.open(withBasePath(`/portal/?t=${portalToken}`), '_blank')}>
               <ExternalLink className="w-3.5 h-3.5" /> Open customer portal
             </Button>
           </div>

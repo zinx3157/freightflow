@@ -12,6 +12,7 @@ import OfflineBanner from './OfflineBanner';
 import PageTransition from './PageTransition';
 import { ShortcutsHelp } from './KeyboardShortcuts';
 import { Maximize2, Menu } from 'lucide-react';
+import { withBasePath } from '@/lib/basePath';
 
 export default function CopilotWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -37,7 +38,7 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
       if (e.key.toLowerCase() === 'n' && !isPortal && !isTracking && !zen) {
         // avoid double-fire: only if not in an input
         e.preventDefault();
-        window.location.href = '/shipments/?new=1';
+        window.location.href = withBasePath('/shipments/?new=1');
       }
     }
     window.addEventListener('keydown', onKey);

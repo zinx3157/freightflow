@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { basePath, withBasePath } from '@/lib/basePath';
 
 export default function ServiceWorkerRegister() {
   useEffect(() => {
@@ -17,9 +18,25 @@ export default function ServiceWorkerRegister() {
       window.location.reload();
     });
 
-    window.addEventListener('load', () => {
+    window.addEventListener('load', async () => {
+      const swUrl = withBasePath('/sw.js');
+      const scope = withBasePath('/');
+
+      try {
+        // Older builds registered /sw.js at origin root. On GitHub Pages project sites
+        // that leaves mobile/PWA users controlled by the wrong scope, so clear it.
+        if (basePath) {
+          const regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(
+            regs
+              .filter((reg) => new URL(reg.scope).pathname !== scope)
+              .map((reg) => reg.unregister())
+          );
+        }
+      } catch {}
+
       navigator.serviceWorker
-        .register('/sw.js')
+        .register(swUrl, { scope })
         .then((reg) => {
           // Check for updates periodically
           setInterval(() => {

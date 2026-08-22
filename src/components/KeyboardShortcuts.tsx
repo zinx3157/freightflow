@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Card } from './ui';
 import { Keyboard, Command, Search, Plus, Package, FileText, RefreshCw, Moon, ArrowRight } from 'lucide-react';
+import { withBasePath } from '@/lib/basePath';
 
 /**
  * CargoWise-style keyboard shortcut help overlay.
@@ -46,9 +47,9 @@ export function ShortcutsHelp() {
           const onNext = (ev: KeyboardEvent) => {
             window.removeEventListener('keydown', onNext, true);
             if (ev.key.toLowerCase() === 'd') {
-              window.location.href = '/';
+              window.location.href = withBasePath('/');
             } else if (ev.key.toLowerCase() === 's') {
-              window.location.href = '/shipments/';
+              window.location.href = withBasePath('/shipments/');
             }
           };
           window.addEventListener('keydown', onNext, { once: true, capture: true });
