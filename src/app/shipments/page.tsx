@@ -5,6 +5,8 @@ import { useRouter } from 'next/navigation';
 import { useQueryParams } from '@/lib/useQueryParams';
 import PageShell from '@/components/PageShell';
 import { Card, Button, Badge, Input, Select, Field, Modal, EmptyState } from '@/components/ui';
+import PortAutocomplete from '@/components/PortAutocomplete';
+import ChargeableWeightCalc from '@/components/ChargeableWeightCalc';
 import { db } from '@/lib/store';
 import ShipmentDetail from '@/components/ShipmentDetail';
 import type { Shipment, ShipmentMode, ShipmentDirection, ShipmentStatus } from '@/lib/types';
@@ -17,6 +19,7 @@ import {
   Search,
   ArrowRight,
   Download,
+  Scale,
 } from 'lucide-react';
 import { formatDate, formatMoney, statusColor, titleCase, daysFromNow } from '@/lib/utils';
 
@@ -38,7 +41,6 @@ export default function ShipmentsPage() {
     if (m === 'air' || m === 'sea') setModeFilter(m);
   }, [params]);
 
-  // Close the new-shipment modal if user clears ?new=1 (e.g. by back-navigating)
   useEffect(() => {
     if (params.get('new') !== '1' && modalOpen) setModalOpen(false);
   }, [params, modalOpen]);
@@ -68,7 +70,6 @@ export default function ShipmentsPage() {
     };
   }, [data]);
 
-  // Derived values and callbacks AFTER all hooks are declared.
   const detailId = params.get('id');
   const selected = data && detailId ? data.shipments.find((s) => s.id === detailId) || null : null;
   const refresh = () => setData(db.getAll());
@@ -80,7 +81,6 @@ export default function ShipmentsPage() {
     router.push(`/shipments/?id=${created.id}`);
   };
 
-  // Early returns ONLY after every hook has run.
   if (!data) return <PageShell title="Shipments"><div>Loading…</div></PageShell>;
   if (selected) {
     return <ShipmentDetail shipmentId={selected.id} onBack={() => router.push('/shipments/')} onChange={refresh} />;
@@ -93,26 +93,26 @@ export default function ShipmentsPage() {
     >
       <div className="flex flex-wrap gap-2 items-center justify-between">
         <div className="flex flex-wrap gap-2 items-center">
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
             {(['all', 'air', 'sea'] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => setModeFilter(m)}
                 className={`px-3 py-1.5 text-sm rounded-md font-medium capitalize transition ${
-                  modeFilter === m ? 'bg-white shadow text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                  modeFilter === m ? 'bg-white dark:bg-slate-900 shadow text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 {m === 'all' ? 'All modes' : m}
               </button>
             ))}
           </div>
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-lg">
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
             {(['all', 'import', 'export'] as const).map((d) => (
               <button
                 key={d}
                 onClick={() => setDirFilter(d)}
                 className={`px-3 py-1.5 text-sm rounded-md font-medium capitalize transition ${
-                  dirFilter === d ? 'bg-white shadow text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                  dirFilter === d ? 'bg-white dark:bg-slate-900 shadow text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
                 {d === 'all' ? 'Both' : d}
@@ -157,7 +157,7 @@ export default function ShipmentsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-xs uppercase tracking-wide text-slate-500 bg-slate-50/70 border-b border-slate-200">
+                <tr className="text-xs uppercase tracking-wide text-slate-500 bg-slate-50/70 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-700">
                   <th className="px-4 py-3 text-left font-semibold">Reference</th>
                   <th className="px-4 py-3 text-left font-semibold">Customer</th>
                   <th className="px-4 py-3 text-left font-semibold">Route</th>
@@ -165,6 +165,7 @@ export default function ShipmentsPage() {
                   <th className="px-4 py-3 text-left font-semibold">Carrier</th>
                   <th className="px-4 py-3 text-left font-semibold">ETD</th>
                   <th className="px-4 py-3 text-left font-semibold">ETA</th>
+                  <th className="px-4 py-3 text-left font-semibold">Chg.Wt</th>
                   <th className="px-4 py-3 text-left font-semibold">Status</th>
                   <th className="px-4 py-3 text-right font-semibold">Value</th>
                 </tr>
@@ -173,21 +174,21 @@ export default function ShipmentsPage() {
                 {filtered.map((s) => (
                   <tr
                     key={s.id}
-                    className="border-b border-slate-100 hover:bg-slate-50 cursor-pointer"
+                    className="border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer"
                     onClick={() => router.push(`/shipments/?id=${s.id}`)}
                   >
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-slate-900">{s.reference}</div>
+                      <div className="font-semibold text-slate-900 dark:text-white">{s.reference}</div>
                       <div className="text-xs text-slate-500 font-mono">{s.mawbOrBl}</div>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{s.customerName}</td>
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-200">{s.customerName}</td>
                     <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5 text-slate-700">
-                        <span>{s.portOfLoading}</span>
+                      <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-200">
+                        <span className="font-mono text-xs">{s.portOfLoading}</span>
                         <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{s.portOfDischarge}</span>
+                        <span className="font-mono text-xs">{s.portOfDischarge}</span>
                       </div>
-                      <div className="text-xs text-slate-400">{s.commodity}</div>
+                      <div className="text-xs text-slate-400 truncate max-w-[180px]">{s.commodity}</div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col gap-1">
@@ -202,23 +203,30 @@ export default function ShipmentsPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-slate-700">{s.carrier}</div>
+                      <div className="text-slate-700 dark:text-slate-200">{s.carrier}</div>
                       <div className="text-xs text-slate-400">{s.vesselOrFlight}</div>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-200">
                       <div>{formatDate(s.etd)}</div>
                       <div className="text-xs text-slate-400">{daysFromNow(s.etd)}</div>
                     </td>
-                    <td className="px-4 py-3 text-slate-700">
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-200">
                       <div>{formatDate(s.eta)}</div>
                       <div className="text-xs text-slate-400">{daysFromNow(s.eta)}</div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-700 dark:text-slate-200 text-xs">
+                      {s.chargeableWeight ? (
+                        <span className="font-mono font-semibold">{s.chargeableWeight.toFixed(1)} kg</span>
+                      ) : (
+                        <span className="text-slate-400 font-mono">{s.weight} kg</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold border ${statusColor('shipment', s.status)}`}>
                         {titleCase(s.status)}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                    <td className="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">
                       {formatMoney(s.totalAmount, s.currency)}
                     </td>
                   </tr>
@@ -239,6 +247,8 @@ export default function ShipmentsPage() {
   );
 }
 
+// ---------- New Shipment Modal ----------
+
 function NewShipmentModal({
   open,
   onClose,
@@ -256,10 +266,10 @@ function NewShipmentModal({
   const [customerId, setCustomerId] = useState(customers[0]?.id || '');
   const [origin, setOrigin] = useState('Antananarivo, MG');
   const [destination, setDestination] = useState('');
-  const [pol, setPol] = useState('Toamasina');
+  const [pol, setPol] = useState(mode === 'air' ? 'Antananarivo (TNR)' : 'Toamasina (MGTOA)');
   const [pod, setPod] = useState('');
   const [weight, setWeight] = useState('1000');
-  const [volume, setVolume] = useState('5');
+  const [volume, setVolume] = useState(mode === 'air' ? '2.5' : '15');
   const [pieces, setPieces] = useState('10');
   const [commodity, setCommodity] = useState('General Cargo');
   const [incoterm, setIncoterm] = useState('CIF');
@@ -267,10 +277,25 @@ function NewShipmentModal({
   const [vesselOrFlight, setVesselOrFlight] = useState('');
   const [mawbOrBl, setMawbOrBl] = useState('TBD');
   const [etd, setEtd] = useState(new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10));
-  const [eta, setEta] = useState(new Date(Date.now() + 35 * 86400000).toISOString().slice(0, 10));
+  const [eta, setEta] = useState(new Date(Date.now() + (mode === 'air' ? 10 : 35) * 86400000).toISOString().slice(0, 10));
   const [totalAmount, setTotalAmount] = useState('5000');
   const [currency, setCurrency] = useState('USD');
   const [notes, setNotes] = useState('');
+  const [chargeableWeight, setChargeableWeight] = useState(1000);
+  const [dims, setDims] = useState<{ l?: number; w?: number; h?: number } | undefined>(undefined);
+
+  // Reset sensible defaults when mode changes
+  useEffect(() => {
+    if (mode === 'air') {
+      setPol('Antananarivo (TNR)');
+      setVolume('2.5');
+      setEta(new Date(Date.now() + 10 * 86400000).toISOString().slice(0, 10));
+    } else {
+      setPol('Toamasina (MGTOA)');
+      setVolume('15');
+      setEta(new Date(Date.now() + 35 * 86400000).toISOString().slice(0, 10));
+    }
+  }, [mode]);
 
   useEffect(() => {
     if (open && customers[0] && !customerId) setCustomerId(customers[0].id);
@@ -290,9 +315,13 @@ function NewShipmentModal({
       destination,
       portOfLoading: pol,
       portOfDischarge: pod,
-      weight: Number(weight),
-      volume: Number(volume),
-      pieces: Number(pieces),
+      weight: Number(weight) || 0,
+      volume: Number(volume) || 0,
+      pieces: Number(pieces) || 0,
+      chargeableWeight,
+      dimLengthCm: dims?.l,
+      dimWidthCm: dims?.w,
+      dimHeightCm: dims?.h,
       commodity,
       incoterm,
       carrier: carrier || 'TBD',
@@ -308,7 +337,12 @@ function NewShipmentModal({
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Book New Shipment" size="lg">
+    <Modal open={open} onClose={onClose} title={
+      <div className="flex items-center gap-2">
+        {mode === 'air' ? <Plane className="w-5 h-5 text-sky-600" /> : <Ship className="w-5 h-5 text-indigo-600" />}
+        Book New {mode === 'air' ? 'Air' : 'Sea'} Shipment
+      </div>
+    } size="lg">
       <div className="space-y-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Field label="Mode">
@@ -346,30 +380,46 @@ function NewShipmentModal({
           <Field label="Destination City/Country">
             <Input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="e.g. Hamburg, DE" />
           </Field>
-          <Field label={mode === 'air' ? 'Airport of Departure' : 'Port of Loading'}>
-            <Input value={pol} onChange={(e) => setPol(e.target.value)} />
-          </Field>
-          <Field label={mode === 'air' ? 'Airport of Arrival' : 'Port of Discharge'}>
-            <Input value={pod} onChange={(e) => setPod(e.target.value)} placeholder="e.g. Hamburg" />
-          </Field>
+          <PortAutocomplete
+            mode={mode}
+            label={mode === 'air' ? 'Airport of Departure (POL)' : 'Port of Loading (POL)'}
+            value={pol}
+            onChange={(v) => setPol(v)}
+            placeholder={mode === 'air' ? 'e.g. TNR, Antananarivo' : 'e.g. Toamasina'}
+          />
+          <PortAutocomplete
+            mode={mode}
+            label={mode === 'air' ? 'Airport of Arrival (POD)' : 'Port of Discharge (POD)'}
+            value={pod}
+            onChange={(v) => setPod(v)}
+            placeholder={mode === 'air' ? 'e.g. CDG, Paris' : 'e.g. Hamburg'}
+          />
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Field label="Weight (kg)">
+        <ChargeableWeightCalc
+          mode={mode}
+          grossKg={Number(weight) || 0}
+          volumeCbm={Number(volume) || 0}
+          pieces={Number(pieces) || 1}
+          onChange={({ grossKg, volumeCbm, chargeableKg, pieces: pcs, dimsCm }) => {
+            setWeight(String(grossKg));
+            setVolume(String(volumeCbm));
+            setPieces(String(pcs));
+            setChargeableWeight(chargeableKg);
+            setDims(dimsCm);
+          }}
+        />
+
+        {/* When box-dims mode is used, disable direct CBM editing to avoid conflicts; otherwise show standard inputs */}
+        <div className="grid grid-cols-3 md:grid-cols-3 gap-3">
+          <Field label="Gross Weight (kg)">
             <Input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} />
           </Field>
-          <Field label="Volume (CBM)">
-            <Input type="number" step="0.1" value={volume} onChange={(e) => setVolume(e.target.value)} />
+          <Field label={mode === 'air' ? 'Volume (CBM)' : 'Volume (CBM)'}>
+            <Input type="number" step="0.01" value={volume} onChange={(e) => setVolume(e.target.value)} />
           </Field>
           <Field label="Pieces">
             <Input type="number" value={pieces} onChange={(e) => setPieces(e.target.value)} />
-          </Field>
-          <Field label="Incoterm">
-            <Select value={incoterm} onChange={(e) => setIncoterm(e.target.value)}>
-              {['EXW', 'FOB', 'FCA', 'CFR', 'CIF', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP'].map((x) => (
-                <option key={x} value={x}>{x}</option>
-              ))}
-            </Select>
           </Field>
         </div>
 
@@ -379,10 +429,10 @@ function NewShipmentModal({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <Field label={mode === 'air' ? 'Airline' : 'Carrier / Shipping Line'}>
-            <Input value={carrier} onChange={(e) => setCarrier(e.target.value)} placeholder="e.g. Maersk, CMA CGM, Air France" />
+            <Input value={carrier} onChange={(e) => setCarrier(e.target.value)} placeholder={mode === 'air' ? 'e.g. Air France, Ethiopian, Kenya Airways' : 'e.g. Maersk, CMA CGM, MSC, Maersk'} />
           </Field>
           <Field label={mode === 'air' ? 'Flight No.' : 'Vessel / Voyage'}>
-            <Input value={vesselOrFlight} onChange={(e) => setVesselOrFlight(e.target.value)} placeholder="e.g. MAERSK EMDEN 042E" />
+            <Input value={vesselOrFlight} onChange={(e) => setVesselOrFlight(e.target.value)} placeholder={mode === 'air' ? 'e.g. AF934' : 'e.g. MAERSK EMDEN 042E'} />
           </Field>
         </div>
 
@@ -410,22 +460,35 @@ function NewShipmentModal({
               <option value="GBP">GBP</option>
             </Select>
           </Field>
+          <Field label="Incoterm">
+            <Select value={incoterm} onChange={(e) => setIncoterm(e.target.value)}>
+              {['EXW', 'FOB', 'FCA', 'CFR', 'CIF', 'CPT', 'CIP', 'DAP', 'DPU', 'DDP'].map((x) => (
+                <option key={x} value={x}>{x}</option>
+              ))}
+            </Select>
+          </Field>
         </div>
 
         <Field label="Notes">
           <textarea
-            className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:border-brand outline-none min-h-[72px]"
+            className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 focus:border-brand outline-none min-h-[72px]"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Any special handling, dangerous goods info, client instructions…"
           />
         </Field>
 
-        <div className="flex justify-end gap-2 pt-2">
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={submit} disabled={!pod || !destination || !carrier}>
-            Create Shipment
-          </Button>
+        <div className="flex justify-between items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <Scale className="w-4 h-4" />
+            <span>Chargeable weight: <b className="text-slate-800 dark:text-slate-100">{chargeableWeight.toFixed(2)} kg</b></span>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={submit} disabled={!pod || !destination || !carrier}>
+              Create Shipment
+            </Button>
+          </div>
         </div>
       </div>
     </Modal>

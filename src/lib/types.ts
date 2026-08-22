@@ -324,9 +324,13 @@ export interface Shipment {
   destination: string;
   portOfLoading: string;
   portOfDischarge: string;
-  weight: number;
-  volume: number;
+  weight: number;                 // gross weight kg
+  volume: number;                 // CBM
   pieces: number;
+  chargeableWeight?: number;      // kg (IATA max(gross, volumetric) for air; W/M for LCL)
+  dimLengthCm?: number;
+  dimWidthCm?: number;
+  dimHeightCm?: number;
   commodity: string;
   hsCode?: string;
   hsDescription?: string;

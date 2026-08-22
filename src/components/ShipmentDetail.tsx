@@ -30,6 +30,7 @@ import {
   Package2,
   FileDigit,
   Send,
+  Scale,
 } from 'lucide-react';
 import { formatDate, formatDateTime, formatMoney, statusColor, titleCase, daysFromNow } from '@/lib/utils';
 import { generateShipmentBL, downloadBlob } from '@/lib/documents';
@@ -299,9 +300,10 @@ export default function ShipmentDetail({
               <Box className="w-4 h-4 text-brand" /> Cargo Details
             </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <InfoTile icon={<Weight className="w-4 h-4" />} label="Weight" value={`${shipment.weight.toLocaleString()} kg`} />
+              <InfoTile icon={<Weight className="w-4 h-4" />} label="Gross Weight" value={`${shipment.weight.toLocaleString()} kg`} />
               <InfoTile icon={<Box className="w-4 h-4" />} label="Volume" value={`${shipment.volume} CBM`} />
               <InfoTile icon={<Hash className="w-4 h-4" />} label="Pieces" value={String(shipment.pieces)} />
+              <InfoTile icon={<Scale className="w-4 h-4 text-brand" />} label={shipment.mode === 'air' ? 'Chargeable Wt (IATA)' : 'W/M Chargeable'} value={`${(shipment.chargeableWeight ?? shipment.weight).toLocaleString(undefined,{maximumFractionDigits:1})} kg`} />
               <InfoTile icon={<ClipboardCheck className="w-4 h-4" />} label="Commodity" value={shipment.commodity} />
             </div>
             {shipment.hsCode && (

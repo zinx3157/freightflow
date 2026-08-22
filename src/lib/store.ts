@@ -682,6 +682,13 @@ function load(): DB {
     if (!parsed.counter.whr) parsed.counter.whr = 0;
     if (!parsed.counter.leg) parsed.counter.leg = 0;
     if (!parsed.counter.pod) parsed.counter.pod = 0;
+    // B9.1: backfill chargeable weight for existing shipments (air: IATA 1:6000; sea: gross)
+    parsed.shipments.forEach((s) => {
+      if (typeof s.chargeableWeight !== 'number' || !isFinite(s.chargeableWeight)) {
+        const volKg = s.mode === 'air' ? ((s.volume || 0) * 1_000_000) / 6000 : (s.volume || 0) * 1000;
+        s.chargeableWeight = Math.max(s.weight || 0, volKg);
+      }
+    });
     return parsed;
   } catch { return seed(); }
 }
