@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import type { EmailLog, Invoice, Quote, Shipment, InboundEmail } from '@/lib/types';
 import { db } from '@/lib/store';
 import { Button, Card, Badge, Modal, Select, Field, Label, Input, Textarea } from './ui';
-import { Mail, Send, Eye, MousePointerClick, Clock, X, FileText, CheckCircle2, AlertCircle, Plus, Inbox, Archive, Trash2, Reply, Star, Paperclip, ArrowRight, Building2, Anchor, Shield, User, Truck } from 'lucide-react';
+import { Mail, Send, Eye, MousePointerClick, Clock, X, FileText, CheckCircle2, AlertCircle, Plus, Inbox, Archive, Trash2, Reply, Star, Paperclip, ArrowRight, Building2, Anchor, Shield, User, Truck, Wifi, Settings } from 'lucide-react';
 import { formatDateTime, formatDate, titleCase } from '@/lib/utils';
 
 const TEMPLATES = [
@@ -47,6 +47,10 @@ export default function EmailCenter({ scope, scopeRef }: { scope?: 'shipment' | 
   const [to, setTo] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
+  const [sendMode, setSendMode] = useState<'mailto'|'emailjs'|'demo'>('mailto');
+  const [sending, setSending] = useState(false);
+  const [liveStatus, setLiveStatus] = useState('');
+  const [emailJs, setEmailJs] = useState({ serviceId: '', templateId: '', publicKey: '', fromName: 'FreightFlow Logistics', replyTo: 'ops@freightflow.mg' });
 
   const reload = () => {
     const d = db.getAll();
@@ -55,6 +59,14 @@ export default function EmailCenter({ scope, scopeRef }: { scope?: 'shipment' | 
   };
   useEffect(() => {
     reload();
+    try {
+      const raw = localStorage.getItem('ff_emailjs_config');
+      if (raw) {
+        const cfg = JSON.parse(raw);
+        setEmailJs((prev) => ({ ...prev, ...cfg }));
+        if (cfg.serviceId && cfg.templateId && cfg.publicKey) setSendMode('emailjs');
+      }
+    } catch {}
     const onChange = () => reload();
     window.addEventListener('ff:data-changed', onChange);
     return () => window.removeEventListener('ff:data-changed', onChange);
@@ -97,8 +109,7 @@ export default function EmailCenter({ scope, scopeRef }: { scope?: 'shipment' | 
     setBody(t.body(ref, cust, amt));
   };
 
-  const sendEmail = () => {
-    if (!to || !subject) return;
+  const relatedMeta = () => {
     let relatedType: EmailLog['relatedType'] | undefined;
     let relatedId: string | undefined;
     let relatedRef: string | undefined;
@@ -109,24 +120,82 @@ export default function EmailCenter({ scope, scopeRef }: { scope?: 'shipment' | 
         if (scope === 'quote') { relatedType = 'quote'; relatedId = (scopeRef as Quote).id; relatedRef = (scopeRef as Quote).number; }
       }
     }
-    db.logEmail({
+    return { relatedType, relatedId, relatedRef };
+  };
+
+  const logOutbound = (status: EmailLog['status'] = 'sent') => {
+    const meta = relatedMeta();
+    return db.logEmail({
       to, subject, body,
       template: (templateId as EmailLog['template']) || 'custom',
-      relatedType, relatedId, relatedRef,
+      ...meta,
+      status,
     });
-    // Simulate open / click for demo — random for realism after a delay
-    setTimeout(() => {
-      const sent = db.getAll().emails[0];
-      if (sent && Math.random() > 0.2) {
-        db.markEmailOpened(sent.id);
-        if (Math.random() > 0.5) {
-          setTimeout(() => db.markEmailClicked(sent.id), 1500);
-        }
+  };
+
+  const openMailClient = () => {
+    const href = `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = href;
+  };
+
+  const sendViaEmailJs = async () => {
+    if (!emailJs.serviceId || !emailJs.templateId || !emailJs.publicKey) {
+      throw new Error('EmailJS is not configured. Add service ID, template ID, and public key, or use Email client mode.');
+    }
+    const payload = {
+      service_id: emailJs.serviceId,
+      template_id: emailJs.templateId,
+      user_id: emailJs.publicKey,
+      template_params: {
+        to_email: to,
+        to_name: to.split('@')[0],
+        from_name: emailJs.fromName || 'FreightFlow Logistics',
+        reply_to: emailJs.replyTo || 'ops@freightflow.mg',
+        subject,
+        message: body,
+        body,
+        reference: relatedMeta().relatedRef || '',
+      },
+    };
+    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) throw new Error(`EmailJS send failed (${res.status}): ${await res.text()}`);
+  };
+
+  const saveEmailJsConfig = () => {
+    try { localStorage.setItem('ff_emailjs_config', JSON.stringify(emailJs)); } catch {}
+    setLiveStatus('EmailJS config saved locally in this browser.');
+  };
+
+  const sendEmail = async () => {
+    if (!to || !subject) return;
+    setSending(true);
+    setLiveStatus('');
+    try {
+      if (sendMode === 'emailjs') {
+        await sendViaEmailJs();
+        const sent = logOutbound('delivered');
+        setLiveStatus(`Live email delivered via EmailJS to ${to}.`);
+        if (sent) db.markEmailOpened(sent.id);
+      } else if (sendMode === 'mailto') {
+        openMailClient();
+        logOutbound('sent');
+        setLiveStatus('Opened your email app with the message ready to send. Logged in FreightFlow.');
+      } else {
+        logOutbound('sent');
+        setLiveStatus('Demo log created.');
       }
+      setComposeOpen(false);
       reload();
-    }, 2000 + Math.random() * 3000);
-    setComposeOpen(false);
-    reload();
+    } catch (e: any) {
+      setLiveStatus(e?.message || 'Live email failed.');
+      // Keep compose open so the user can switch to Email client fallback.
+    } finally {
+      setSending(false);
+    }
   };
 
   const filtered = scopeRef && scope === 'shipment'
@@ -215,6 +284,35 @@ export default function EmailCenter({ scope, scopeRef }: { scope?: 'shipment' | 
       )}
 
       <Modal open={composeOpen} onClose={() => setComposeOpen(false)} title="Compose email" size="lg">
+        <div className="mb-4 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/60">
+          <div className="flex items-center gap-2 mb-2">
+            <Wifi className="w-4 h-4 text-emerald-600" />
+            <div className="text-sm font-bold text-slate-900 dark:text-white">Live sending</div>
+            <Badge color={sendMode === 'emailjs' ? 'emerald' : sendMode === 'mailto' ? 'blue' : 'slate'}>{sendMode === 'emailjs' ? 'EmailJS API' : sendMode === 'mailto' ? 'Email client' : 'Demo'}</Badge>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <Field label="Send method">
+              <Select value={sendMode} onChange={(e) => setSendMode(e.target.value as any)}>
+                <option value="mailto">Live via device email app</option>
+                <option value="emailjs">Live via EmailJS API</option>
+                <option value="demo">Demo log only</option>
+              </Select>
+            </Field>
+            {sendMode === 'emailjs' && <Field label="EmailJS service ID"><Input value={emailJs.serviceId} onChange={e=>setEmailJs({...emailJs, serviceId:e.target.value})} placeholder="service_xxx" /></Field>}
+            {sendMode === 'emailjs' && <Field label="EmailJS template ID"><Input value={emailJs.templateId} onChange={e=>setEmailJs({...emailJs, templateId:e.target.value})} placeholder="template_xxx" /></Field>}
+          </div>
+          {sendMode === 'emailjs' && (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+              <Field label="EmailJS public key"><Input value={emailJs.publicKey} onChange={e=>setEmailJs({...emailJs, publicKey:e.target.value})} placeholder="public key" /></Field>
+              <Field label="From name"><Input value={emailJs.fromName} onChange={e=>setEmailJs({...emailJs, fromName:e.target.value})} /></Field>
+              <div className="flex items-end"><Button type="button" variant="outline" onClick={saveEmailJsConfig} className="w-full"><Settings className="w-4 h-4"/> Save config</Button></div>
+            </div>
+          )}
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
+            Static GitHub Pages cannot hide SMTP/API secrets. Use Email client for zero setup, or EmailJS public browser keys for direct API sending.
+          </p>
+          {liveStatus && <div className="text-xs text-emerald-700 dark:text-emerald-300 mt-2">{liveStatus}</div>}
+        </div>
         <div className="grid grid-cols-4 gap-3 mb-3">
           <Field label="Template">
             <Select value={templateId} onChange={(e) => applyTemplate(e.target.value)}>
@@ -236,9 +334,9 @@ export default function EmailCenter({ scope, scopeRef }: { scope?: 'shipment' | 
         </div>
         <div className="flex justify-end gap-2 mt-4">
           <Button variant="outline" onClick={() => setComposeOpen(false)}><X className="w-4 h-4" /> Cancel</Button>
-          <Button onClick={sendEmail} disabled={!to || !subject}><Send className="w-4 h-4" /> Send & track</Button>
+          <Button onClick={sendEmail} disabled={!to || !subject || sending}><Send className="w-4 h-4" /> {sending ? 'Sending…' : sendMode === 'mailto' ? 'Open email app & log' : sendMode === 'emailjs' ? 'Send live & track' : 'Log demo email'}</Button>
         </div>
-        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">In production this integrates with Postmark/SES/SendGrid with webhook-based open/click tracking. Demo simulates opens/clicks after 2-5 seconds.</p>
+        <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-2">Email client mode is live through the user’s device mail app. EmailJS mode sends directly from the browser using your EmailJS public browser configuration.</p>
       </Modal>
     </Card>
   );
