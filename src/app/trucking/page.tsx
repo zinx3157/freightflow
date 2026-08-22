@@ -11,6 +11,7 @@ import { formatDate, formatDateTime, formatMoney, statusColor, titleCase } from 
 import { useRouter } from 'next/navigation';
 import { useQueryParams } from '@/lib/useQueryParams';
 import GpsTracker from '@/components/GpsTracker';
+import { navigateToQuery, detectPlatform } from '@/lib/navigate';
 import PortAutocomplete from '@/components/PortAutocomplete';
 
 const STATUS_LIST: TruckingStatus[] = ['scheduled', 'dispatched', 'en_route', 'loaded', 'unloaded', 'completed'];
@@ -306,19 +307,28 @@ export default function TruckingPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 gap-2 flex-wrap">
                 <div className="text-sm text-slate-700 dark:text-slate-300">
                   <Weight className="w-4 h-4 inline mr-1 text-slate-400" />
                   {t.weight.toLocaleString()} kg · <strong>{formatMoney(t.cost)}</strong>
                 </div>
-                <Select
-                  value={t.status}
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => { e.stopPropagation(); updateStatus(t.id, e.target.value as TruckingStatus); }}
-                  className="w-36"
-                >
-                  {STATUS_LIST.map((st) => (<option key={st} value={st}>{titleCase(st)}</option>))}
-                </Select>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigateToQuery(`${t.deliveryLocation}, Madagascar`); }}
+                    className="inline-flex items-center gap-1 px-3 py-2 min-h-[40px] rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold active:scale-95 transition"
+                    title={`Navigate to delivery in ${detectPlatform() === 'android' ? 'Google Maps / Waze' : 'Google Maps'}`}
+                  >
+                    <Navigation className="w-4 h-4" /> Navigate
+                  </button>
+                  <Select
+                    value={t.status}
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => { e.stopPropagation(); updateStatus(t.id, e.target.value as TruckingStatus); }}
+                    className="w-36"
+                  >
+                    {STATUS_LIST.map((st) => (<option key={st} value={st}>{titleCase(st)}</option>))}
+                  </Select>
+                </div>
               </div>
               {t.notes && (
                 <div className="mt-3 text-xs text-slate-500 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-md p-2">

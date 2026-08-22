@@ -2,7 +2,7 @@
  * Cache-first for static assets, network-first for HTML with offline shell fallback.
  * Base-path aware (works at root AND under /freightflow/ on GitHub Pages).
  */
-const CACHE = 'freightflow-b9-3-4-v1';
+const CACHE = 'freightflow-b9-4-v1';
 const RUNTIME = 'freightflow-b9-runtime';
 
 const basePath = self.registration?.scope?.includes('/freightflow') ? '/freightflow' : '';
@@ -87,4 +87,36 @@ self.addEventListener('message', (event) => {
       clients.forEach((c) => c.postMessage({ type: 'queue-changed' }))
     );
   }
+});
+
+// ===== Feature #3: Web Push Notifications =====
+self.addEventListener('push', (event) => {
+  let payload = { title: 'FreightFlow', body: 'You have a new update', tag: 'ff-default' };
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch {
+    try { payload.body = event.data.text(); } catch {}
+  }
+  const title = payload.title || 'FreightFlow';
+  const options = {
+    body: payload.body || '',
+    icon: basePath + '/icon-192.svg',
+    badge: basePath + '/icon-192.svg',
+    tag: payload.tag || 'ff-default',
+    data: payload.data || { url: basePath + '/' },
+    vibrate: [100, 50, 100],
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || basePath + '/';
+  event.waitUntil((async () => {
+    const allClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of allClients) {
+      if (client.url === targetUrl && 'focus' in client) return client.focus();
+    }
+    if (self.clients.openWindow) return self.clients.openWindow(targetUrl);
+  })());
 });

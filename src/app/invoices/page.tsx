@@ -172,11 +172,12 @@ export default function InvoicesPage() {
                           if (full) downloadBlob(generateInvoicePDF(full), `${full.number}.pdf`);
                         }} className="p-1.5 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition"><Download className="w-4 h-4" /></button>
                         {!i.einvoice?.ooboUid && (
-                          <button title="Submit to OOBO / DGI (Madagascar e-invoice)" onClick={() => {
-                            db.submitOobo(i.id);
+                          <button title="Sign & submit OOBO/DGI fiscal e-invoice (RSA-SHA256)" onClick={async () => {
+                            toast({ title: '🔐 Signing e-invoice…', description: `${i.number} RSA-SHA256`, variant: 'info' });
+                            await db.submitOobo(i.id);
                             setData(db.getAll());
-                            toast({ title: '📨 Submitted to OOBO', description: `${i.number} sent for fiscal validation`, variant: 'success' });
-                          }} className="p-1.5 rounded hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-600 dark:text-violet-400 transition" aria-label="Submit OOBO">
+                            toast({ title: '✅ Fiscal e-invoice signed', description: `${i.number} · QR + RSA stamp attached`, variant: 'success' });
+                          }} className="p-1.5 rounded hover:bg-violet-50 dark:hover:bg-violet-900/20 text-violet-600 dark:text-violet-400 transition" aria-label="Sign OOBO">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v8"/><path d="m16 6-4-4-4 4"/><rect width="20" height="8" x="2" y="14" rx="2"/></svg>
                           </button>
                         )}

@@ -8,7 +8,7 @@ export default function BetaBanner() {
   const [zen, setZen] = useState(false);
   const [online, setOnline] = useState(true);
   useEffect(() => {
-    const v = localStorage.getItem('ff_beta_banner_hide_b9_3');
+    const v = localStorage.getItem('ff_beta_banner_hide_b9_4');
     if (v !== '1') setHidden(false);
     const sync = () => setZen(document.documentElement.classList.contains('ff-zen'));
     sync();
@@ -28,12 +28,12 @@ export default function BetaBanner() {
   return (
     <div className="bg-gradient-to-r from-brand via-indigo-600 to-violet-600 text-white text-xs sm:text-sm py-2 px-3 sm:px-4 flex items-center justify-center gap-2 sm:gap-3 relative z-40">
       <Rocket className="w-4 h-4 animate-pulse shrink-0" />
-      <span className="font-bold shrink-0">FreightFlow BETA 9.3 "Pro Ops"</span>
+      <span className="font-bold shrink-0">FreightFlow BETA 9.4 "Mobile Pro" 🇲🇬</span>
       <span className="hidden sm:inline text-white/90">
-        — Drag-and-drop Kanban · Exceptions alerts · Profitability BI · Carrier reliability · Doc compliance · Keyboard shortcuts
+        — 📸 Real camera POD · 🗺️ Google/Waze Navigate · 🔔 Web Push · 🧾 OOBO RSA e-invoices · 🏢 Multi-company · 💹 Profitability drill-down · 🔄 Realtime sync
       </span>
       <span className="sm:hidden text-white/90 flex items-center gap-1">
-        <Smartphone className="w-3 h-3" /> Kanban + BI
+        <Smartphone className="w-3 h-3" /> Camera · Nav · Push
       </span>
       {!online && (
         <span className="inline-flex items-center gap-1 bg-rose-500/80 text-white px-2 py-0.5 rounded-full text-[10px] font-bold animate-pulse">
@@ -41,7 +41,7 @@ export default function BetaBanner() {
         </span>
       )}
       <button
-        onClick={() => { setHidden(true); localStorage.setItem('ff_beta_banner_hide_b9_3', '1'); }}
+        onClick={() => { setHidden(true); localStorage.setItem('ff_beta_banner_hide_b9_4', '1'); }}
         className="ml-1 hover:bg-white/20 rounded p-1 shrink-0"
         title="Dismiss"
       >

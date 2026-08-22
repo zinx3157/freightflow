@@ -537,8 +537,12 @@ export interface Pod {
   truckingId: string;
   shipmentId?: string;
   receiverName: string;
-  receiverSignature?: string;     // data URL or simulated
-  podPhotoDataUrl?: string;       // simulated photo
+  receiverSignature?: string;     // data URL
+  podPhotoDataUrl?: string;       // photo data URL (real camera capture in B9.4+)
+  podPhotoLat?: number;           // geotag
+  podPhotoLng?: number;
+  podPhotoCaption?: string;
+  photos?: PodPhoto[];            // multiple photos (B9.4+)
   comments?: string;
   deliveredAt: string;
   condition: 'good' | 'damaged' | 'short' | 'over';
@@ -624,10 +628,53 @@ export interface EInvoiceMeta {
   ooboStatus: 'draft' | 'submitted' | 'validated' | 'rejected';
   ooboUid?: string;      // identifiant unique OOBO
   ooboSubmittedAt?: string;
-  ooboQrCode?: string;
-  htva: number;          // Hors TVA
+  ooboQrCode?: string;        // SVG/PNG data URL for QR
+  ooboSignature?: string;     // RSA-SHA256 base64url signature
+  ooboPayload?: string;       // raw QR pipe-delimited payload
+  htva: number;          // Hors TVA (Ariary)
   tvaRate: number;       // 20% standard MG
-  tva: number;
+  tva: number;           // TVA
   ttc: number;           // TTC
   paymentMethod: 'bank_transfer' | 'cash' | 'check' | 'mobile_money' | 'card';
+}
+
+// ===== Beta 9.4 — Multi-company / multi-branch + camera POD photos + navigation =====
+
+export interface Branch {
+  id: string;
+  companyId: string;
+  name: string;
+  city: string;
+  country: string;
+  address?: string;
+  phone?: string;
+  iataCode?: string;
+  fiataMemberId?: string;
+  nif?: string;       // Madagascar NIF
+  stat?: string;      // Madagascar STAT
+}
+
+export interface Company {
+  id: string;
+  legalName: string;
+  shortName: string;
+  logoColor?: string;
+  nif?: string;
+  stat?: string;
+  iataCode?: string;
+  fiataMemberId?: string;
+  branches: Branch[];
+}
+
+export interface PodPhoto {
+  id: string;
+  podId?: string;          // attached to a POD (driver app)
+  truckingId?: string;
+  shipmentId?: string;
+  dataUrl: string;         // base64 (for localStorage demo)
+  caption?: string;
+  takenAt: string;
+  takenBy?: string;
+  lat?: number;
+  lng?: number;
 }

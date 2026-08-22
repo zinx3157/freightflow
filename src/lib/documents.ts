@@ -654,14 +654,31 @@ export function generateInvoicePDF(inv: Invoice): Blob {
     y += 4;
   }
 
-  // OOBO / e-invoice block
+  // OOBO / e-invoice block with real RSA-SHA256 fiscal QR
   if (inv.einvoice) {
-    rect(doc, MARGIN_L, y, W, 16, [235, 250, 240], [80, 160, 110], 0.5);
+    const qrSize = 28;
+    const blockH = inv.einvoice.ooboQrCode ? qrSize + 8 : 18;
+    rect(doc, MARGIN_L, y, W, blockH, [235, 250, 240], [80, 160, 110], 0.5);
     doc.setFont('helvetica', 'bold').setFontSize(8).setTextColor(20, 90, 50);
     doc.text('OOBO / DGI E-INVOICE (MADAGASCAR)', MARGIN_L + 3, y + 2, { baseline: 'top' });
-    doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(20, 90, 50);
-    doc.text(`UID: ${inv.einvoice.ooboUid ?? 'pending'}  ·  NIF Emitter: ${inv.einvoice.nifEmitter}  ·  HTVA: ${fmtMoney(inv.einvoice.htva, inv.currency)}  ·  VAT (${(inv.einvoice.tvaRate * 100).toFixed(0)}%): ${fmtMoney(inv.einvoice.tva, inv.currency)}  ·  TTC: ${fmtMoney(inv.einvoice.ttc, inv.currency)}  ·  Payment: ${inv.einvoice.paymentMethod.toUpperCase()}`, MARGIN_L + 3, y + 8, { baseline: 'top' });
-    y += 18;
+    doc.setFont('helvetica', 'normal').setFontSize(7.5).setTextColor(20, 90, 50);
+    const qrX = MARGIN_L + W - qrSize - 3;
+    const qrY = y + (blockH - qrSize) / 2;
+    const textW = inv.einvoice.ooboQrCode ? W - qrSize - 8 : W - 6;
+    const eInfo = [
+      `UID: ${inv.einvoice.ooboUid ?? 'pending'}`,
+      `NIF Emitter: ${inv.einvoice.nifEmitter}  ·  STAT: ${inv.einvoice.statEmitter || '—'}`,
+      `HTVA: ${fmtMoney(inv.einvoice.htva, inv.currency)}  ·  VAT ${(inv.einvoice.tvaRate * 100).toFixed(0)}%: ${fmtMoney(inv.einvoice.tva, inv.currency)}  ·  TTC: ${fmtMoney(inv.einvoice.ttc, inv.currency)}`,
+      `Payment: ${inv.einvoice.paymentMethod.toUpperCase()}  ·  Signed: RSA-SHA256 (client-side)`,
+    ].join('\n');
+    const eLines = doc.splitTextToSize(eInfo, textW);
+    doc.text(eLines, MARGIN_L + 3, y + 6, { baseline: 'top' });
+    if (inv.einvoice.ooboQrCode) {
+      try { doc.addImage(inv.einvoice.ooboQrCode, 'SVG', qrX, qrY, qrSize, qrSize); } catch {
+        // fallback: if SVG can't be embedded (older jsPDF), skip image
+      }
+    }
+    y += blockH + 2;
   }
 
   // thank-you

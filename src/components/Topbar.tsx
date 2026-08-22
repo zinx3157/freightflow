@@ -1,14 +1,16 @@
 'use client';
 
-import { Bell, Plus, Search, LogOut, ChevronDown, Users, Maximize2, Minimize2, ExternalLink, Menu, Wifi } from 'lucide-react';
+import { Bell, Plus, Search, LogOut, ChevronDown, Users, Maximize2, Minimize2, ExternalLink, Menu, Wifi, Settings, Building2, CircleDot } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from './ui';
 import { CommandPalette, NotificationsMenu, ThemeToggle } from './CommandCenter';
 import { LanguageToggle } from './LanguageToggle';
+import SettingsPanel, { getActiveBranch, getActiveCompany } from './SettingsPanel';
 import { db } from '@/lib/store';
 import { useAuth, roleLabel } from './AuthProvider';
 import { getAllUsers, login as doSwitchUser, ROLE_LABEL } from '@/lib/auth';
+import { getSyncConfig, connectRealtime } from '@/lib/realtime';
 
 const isMac = typeof navigator !== 'undefined' ? /Mac|iPhone|iPad/.test(navigator.platform) : false;
 
@@ -45,6 +47,9 @@ export default function Topbar({ onHamburgerClick }: { onHamburgerClick?: () => 
   const userMenuRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [zenMode, setZenMode] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'connected' | 'disconnected' | 'error' | 'checking'>('checking');
+  const [activeBranchName, setActiveBranchName] = useState<string>('');
 
   // Track native browser fullscreen changes
   useEffect(() => {
@@ -60,6 +65,33 @@ export default function Topbar({ onHamburgerClick }: { onHamburgerClick?: () => 
     const openNotifs = () => { setNotifOpen(true); setPaletteOpen(false); };
     window.addEventListener('ff:open-notifs', openNotifs);
     return () => window.removeEventListener('ff:open-notifs', openNotifs);
+  }, []);
+
+  // Active branch/company indicator
+  useEffect(() => {
+    const refresh = () => {
+      const b = getActiveBranch(); const c = getActiveCompany();
+      setActiveBranchName(b ? `${b.name} · ${c?.shortName || ''}` : (c?.shortName || ''));
+    };
+    refresh();
+    window.addEventListener('ff:company-changed', refresh);
+    window.addEventListener('ff:sync-config-changed', () => { connectRealtime(getSyncConfig()); refresh(); });
+    return () => {
+      window.removeEventListener('ff:company-changed', refresh);
+    };
+  }, []);
+
+  // Connect realtime & listen for sync status events
+  useEffect(() => {
+    connectRealtime(getSyncConfig());
+    function onSync(e: Event) {
+      const detail = (e as CustomEvent).detail;
+      setSyncStatus(detail?.status === 'connected' ? 'connected' : detail?.status === 'error' ? 'error' : 'checking');
+    }
+    window.addEventListener('ff:sync-status', onSync);
+    // Local cross-tab = always connected
+    setSyncStatus('connected');
+    return () => window.removeEventListener('ff:sync-status', onSync);
   }, []);
 
   // Persist zen mode across reloads
@@ -217,6 +249,31 @@ export default function Topbar({ onHamburgerClick }: { onHamburgerClick?: () => 
             <ExternalLink className="w-4 h-4" />
           </button>
 
+          {activeBranchName && (
+            <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+              <Building2 className="w-3.5 h-3.5" />
+              <span className="truncate max-w-[180px]">{activeBranchName}</span>
+            </div>
+          )}
+
+          <div
+            className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-md"
+            title={`Realtime sync: ${syncStatus}`}
+          >
+            <CircleDot className={`w-3 h-3 ${syncStatus === 'connected' ? 'text-emerald-500 ff-glow-emerald' : syncStatus === 'error' ? 'text-rose-500' : 'text-amber-500 animate-pulse'}`} />
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">
+              {syncStatus === 'connected' ? 'Online' : syncStatus === 'error' ? 'Offline' : '…'}
+            </span>
+          </div>
+
+          <button
+            onClick={() => setSettingsOpen(true)}
+            className="w-9 h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 transition-colors"
+            title="Settings / Companies / Sync / Push"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+
           <button
             onClick={() => { setNotifOpen((v) => !v); setPaletteOpen(false); }}
             className="relative w-9 h-9 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 transition-colors"
@@ -316,6 +373,7 @@ export default function Topbar({ onHamburgerClick }: { onHamburgerClick?: () => 
         <NotificationsMenu open={notifOpen} onClose={() => setNotifOpen(false)} />
       </header>
 
+      <SettingsPanel open={settingsOpen} onClose={() => setSettingsOpen(false)} />
       {helpOpen && <HelpDialog onClose={() => setHelpOpen(false)} />}
     </>
   );

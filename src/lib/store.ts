@@ -1,3 +1,5 @@
+import { signFiscalInvoice } from './rsa';
+import { getActiveBranch, getActiveCompany } from '@/components/SettingsPanel';
 import type {
   Customer,
   Shipment,
@@ -1268,31 +1270,47 @@ export const db = {
     save(d); return ns;
   },
 
-  // ----- Batch 8: OOBO Madagascar e-invoice -----
-  submitOobo: (invoiceId: string) => {
+  // ----- Batch 8+: OOBO Madagascar e-invoice with real RSA-SHA256 signing -----
+  submitOobo: async (invoiceId: string) => {
     const d = load();
     const inv = d.invoices.find(x => x.id === invoiceId);
     if (!inv) return null;
-    const htva = inv.subtotal;
-    const tva = inv.tax || Math.round(htva * 0.2);
+    const htva = Math.round(inv.subtotal);
+    const tvaRate = 0.20;
+    const tva = inv.tax || Math.round(htva * tvaRate);
     const ttc = htva + tva;
+    const co = getActiveCompany();
+    const br = getActiveBranch();
+    const nifEmitter = br?.nif || co?.nif || '2001234567';
+    const statEmitter = br?.stat || co?.stat || '85240/11101/000123';
+    const result = await signFiscalInvoice({
+      invoiceNumber: inv.number,
+      issueDate: inv.issueDate,
+      nifEmitter,
+      nifClient: inv.einvoice?.nifClient || '',
+      invoiceType: inv.einvoice?.invoiceType || 'standard',
+      htva, tvaRate, tva, ttc,
+    });
     inv.einvoice = {
-      invoiceType: 'standard',
-      nifEmitter: inv.einvoice?.nifEmitter || '1003456789',
-      statEmitter: inv.einvoice?.statEmitter || '9876543210123',
+      invoiceType: inv.einvoice?.invoiceType || 'standard',
+      nifEmitter,
+      statEmitter,
       nifClient: inv.einvoice?.nifClient || '',
       statClient: inv.einvoice?.statClient || '',
       ooboStatus: 'validated',
-      ooboUid: 'OOBO-MG-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + String(d.counter.invoice).padStart(6,'0'),
-      ooboSubmittedAt: new Date().toISOString(),
-      ooboQrCode: 'https://oobo.dgi.mg/v/' + Math.random().toString(36).slice(2,14),
-      htva, tvaRate: 20, tva, ttc,
+      ooboUid: result.ooboUid,
+      ooboSubmittedAt: result.signedAt,
+      ooboQrCode: result.qrDataUrl,
+      ooboSignature: result.signature,
+      ooboPayload: result.qrPayload,
+      htva, tvaRate, tva, ttc,
       paymentMethod: inv.einvoice?.paymentMethod || 'bank_transfer',
     };
     inv.tax = tva; inv.total = ttc;
-    addActivity(d, 'invoice', `E-invoice (OOBO) validated for ${inv.number} — UID ${inv.einvoice.ooboUid}`, inv.number);
-    toast({ title: `OOBO e-invoice validated`, description: `${inv.number} → ${inv.einvoice.ooboUid}`, variant: 'success' });
-    save(d); return inv;
+    addActivity(d, 'invoice', `E-invoice (OOBO) digitally signed for ${inv.number} — UID ${result.ooboUid}`, inv.number);
+    save(d);
+    window.dispatchEvent(new CustomEvent('ff:data-changed'));
+    return inv;
   },
 };
 

@@ -28,7 +28,7 @@ function estKm(mode: string, pol: string, pod: string) {
   return LANE_KM[k] || LANE_KM[kr] || (mode === 'air' ? 8000 : 11000);
 }
 
-type Tab = 'overview' | 'financial' | 'operations' | 'sustainability' | 'ledger';
+type Tab = 'overview' | 'financial' | 'profitability' | 'operations' | 'sustainability' | 'ledger';
 
 export default function ReportsPage() {
   const [data, setData] = useState<DB | null>(null);
@@ -182,6 +182,7 @@ export default function ReportsPage() {
   const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
     { id: 'overview', label: 'Overview', icon: <BarChart3 className="w-4 h-4" /> },
     { id: 'financial', label: 'Financial', icon: <DollarSign className="w-4 h-4" /> },
+    { id: 'profitability', label: 'Profitability', icon: <TrendingUp className="w-4 h-4" /> },
     { id: 'operations', label: 'Operations', icon: <Activity className="w-4 h-4" /> },
     { id: 'sustainability', label: 'Sustainability', icon: <Leaf className="w-4 h-4" /> },
     { id: 'ledger', label: 'General Ledger', icon: <FileText className="w-4 h-4" /> },
@@ -236,6 +237,7 @@ export default function ReportsPage() {
 
       {tab === 'overview' && <OverviewTab a={analytics} />}
       {tab === 'financial' && <FinancialTab a={analytics} />}
+      {tab === 'profitability' && data && <ProfitabilityTab data={data} />}
       {tab === 'operations' && <OperationsTab a={analytics} data={data} />}
       {tab === 'sustainability' && <SustainabilityTab a={analytics} />}
       {tab === 'ledger' && (
@@ -244,6 +246,143 @@ export default function ReportsPage() {
         </div>
       )}
     </PageShell>
+  );
+}
+
+// -------- Profitability Drilldown (Feature #6) --------
+function ProfitabilityTab({ data }: { data: DB }) {
+  type Row = { name: string; revenue: number; cost: number; margin: number; count: number };
+  const byCustomer = useMemo<Row[]>(() => {
+    const map = new Map<string, Row>();
+    data.shipments.forEach(s => {
+      const rev = s.totalAmount;
+      const cost = (s.freightCost || rev * 0.72) + (s.customsCost || rev * 0.08) + (s.truckingCost || rev * 0.12);
+      const k = s.customerName;
+      const cur = map.get(k) || { name: k, revenue: 0, cost: 0, margin: 0, count: 0 };
+      cur.revenue += rev; cur.cost += cost; cur.count += 1;
+      cur.margin = cur.revenue ? ((cur.revenue - cur.cost) / cur.revenue) * 100 : 0;
+      map.set(k, cur);
+    });
+    return [...map.values()].sort((a, b) => b.revenue - a.revenue);
+  }, [data]);
+
+  const byLane = useMemo<Row[]>(() => {
+    const map = new Map<string, Row>();
+    data.shipments.forEach(s => {
+      const lane = `${s.portOfLoading || s.origin} → ${s.portOfDischarge || s.destination}`;
+      const rev = s.totalAmount;
+      const cost = (s.freightCost || rev * 0.72) + (s.customsCost || rev * 0.08) + (s.truckingCost || rev * 0.12);
+      const cur = map.get(lane) || { name: lane, revenue: 0, cost: 0, margin: 0, count: 0 };
+      cur.revenue += rev; cur.cost += cost; cur.count += 1;
+      cur.margin = cur.revenue ? ((cur.revenue - cur.cost) / cur.revenue) * 100 : 0;
+      map.set(lane, cur);
+    });
+    return [...map.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 10);
+  }, [data]);
+
+  const byMode = useMemo(() => {
+    const modes = [
+      { key: 'air', label: '✈️ Air', icon: '✈️' },
+      { key: 'sea', label: '🚢 Sea', icon: '🚢' },
+      { key: 'road', label: '🚛 Road', icon: '🚛' },
+    ] as const;
+    return modes.map(m => {
+      const rows = data.shipments.filter(s => s.mode === m.key || (m.key === 'road' && false));
+      const rev = rows.reduce((a, b) => a + b.totalAmount, 0);
+      const cost = rows.reduce((a, b) => a + (b.freightCost || b.totalAmount*0.72) + (b.customsCost || b.totalAmount*0.08) + (b.truckingCost || b.totalAmount*0.12), 0);
+      return { label: m.label, revenue: rev, cost, margin: rev ? ((rev - cost)/rev)*100 : 0, count: rows.length };
+    });
+  }, [data]);
+
+  const totals = useMemo(() => {
+    const rev = data.shipments.reduce((s, x) => s + x.totalAmount, 0);
+    const cost = data.shipments.reduce((s, x) => s + (x.freightCost || x.totalAmount*0.72) + (x.customsCost || x.totalAmount*0.08) + (x.truckingCost || x.totalAmount*0.12), 0);
+    const invoicesPaid = data.invoices.filter(i => i.status === 'paid').reduce((s, i) => s + i.total, 0);
+    const invoicesOutstanding = data.invoices.filter(i => i.status !== 'paid').reduce((s, i) => s + i.total, 0);
+    return { rev, cost, margin: rev ? ((rev-cost)/rev)*100 : 0, invoicesPaid, invoicesOutstanding };
+  }, [data]);
+
+  return (
+    <div className="mt-4 space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Kpi icon={<DollarSign className="w-5 h-5" />} label="Total Revenue" value={formatMoney(totals.rev)} sub="All shipments" color="blue" />
+        <Kpi icon={<TrendingUp className="w-5 h-5" />} label="Gross Margin" value={`${totals.margin.toFixed(1)}%`} sub={`${formatMoney(totals.rev - totals.cost)} profit`} color={totals.margin > 15 ? 'emerald' : 'amber'} />
+        <Kpi icon={<CheckCircle2 className="w-5 h-5" />} label="Invoices Paid" value={formatMoney(totals.invoicesPaid)} sub={`${data.invoices.filter(i=>i.status==='paid').length} invoices`} color="emerald" />
+        <Kpi icon={<AlertTriangle className="w-5 h-5" />} label="Outstanding" value={formatMoney(totals.invoicesOutstanding)} sub="Open receivables" color="amber" />
+      </div>
+
+      {/* By Mode */}
+      <Card className="p-5">
+        <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2"><Activity className="w-4 h-4 text-brand" /> Profitability by Mode</h3>
+        <div className="space-y-3">
+          {byMode.map(m => (
+            <div key={m.label} className="flex items-center gap-3">
+              <div className="w-20 font-semibold text-sm">{m.label}</div>
+              <div className="flex-1 h-8 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-hidden relative">
+                <div className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-lg" style={{ width: `${Math.max(2, m.margin)}%` }} />
+                <div className="absolute inset-0 flex items-center justify-between px-3 text-xs font-semibold text-slate-700 dark:text-slate-200">
+                  <span>{m.count} shipments · {formatMoney(m.revenue)}</span>
+                  <span className={m.margin > 15 ? 'text-emerald-700 dark:text-emerald-300' : 'text-amber-700 dark:text-amber-300'}>{m.margin.toFixed(1)}%</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* By Customer */}
+        <Card className="p-5">
+          <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2"><Users className="w-4 h-4 text-brand" /> Top Customers by Revenue & Margin</h3>
+          <div className="space-y-3">
+            {byCustomer.slice(0, 8).map((c, i) => (
+              <div key={c.name} className="border-b border-slate-100 dark:border-slate-800 pb-2 last:border-0">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="w-6 h-6 rounded-full bg-brand/10 text-brand flex items-center justify-center text-xs font-bold">{i+1}</span>
+                    <span className="font-semibold text-sm text-slate-900 dark:text-white truncate max-w-[180px]">{c.name}</span>
+                    <span className="text-xs text-slate-500">({c.count})</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold">{formatMoney(c.revenue)}</div>
+                    <div className={`text-xs font-semibold ${c.margin > 18 ? 'text-emerald-600' : c.margin > 10 ? 'text-amber-600' : 'text-rose-600'}`}>{c.margin.toFixed(1)}% margin</div>
+                  </div>
+                </div>
+                <div className="mt-1 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                  <div className="h-full bg-gradient-to-r from-brand to-indigo-500 rounded-full" style={{ width: `${Math.min(100, (c.revenue / (byCustomer[0]?.revenue || 1)) * 100)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* By Lane */}
+        <Card className="p-5">
+          <h3 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2"><Globe className="w-4 h-4 text-brand" /> Top Lanes (Port pairs)</h3>
+          <div className="space-y-3">
+            {byLane.map((l, i) => (
+              <div key={l.name} className="border-b border-slate-100 dark:border-slate-800 pb-2 last:border-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 flex items-center justify-center text-xs font-bold shrink-0">{i+1}</span>
+                    <span className="font-medium text-sm text-slate-800 dark:text-slate-200 truncate">{l.name}</span>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-sm font-bold">{formatMoney(l.revenue)}</div>
+                    <div className={`text-xs font-semibold ${l.margin > 18 ? 'text-emerald-600' : l.margin > 10 ? 'text-amber-600' : 'text-rose-600'}`}>{l.margin.toFixed(1)}% margin</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {byLane.length === 0 && <div className="text-sm text-slate-500">No shipments to analyze yet.</div>}
+          </div>
+        </Card>
+      </div>
+
+      <div className="text-xs text-slate-500 dark:text-slate-400 italic">
+        💡 Margin calculations use actual freight/customs/trucking costs when recorded on the shipment, otherwise estimated at 72%/8%/12% allocation. Connect Hasura/your ERP for exact COGS.
+      </div>
+    </div>
   );
 }
 

@@ -30,6 +30,8 @@ import {
 import { formatDate, formatDateTime, titleCase } from '@/lib/utils';
 import { logout } from '@/lib/auth';
 import { useAuth } from '@/components/AuthProvider';
+import CameraCapture from '@/components/CameraCapture';
+import { navigateTo, navigateToQuery, detectPlatform } from '@/lib/navigate';
 
 // Mobile-first driver app — POD capture
 export default function DriverAppPage() {
@@ -220,6 +222,8 @@ function PodCaptureView({ dispatch, existingPod, onBack, onDone }: { dispatch: T
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [photoTaken, setPhotoTaken] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [photoMeta, setPhotoMeta] = useState<{ lat?: number; lng?: number; caption?: string } | null>(null);
 
   // Load existing pod if any
   useEffect(() => {
@@ -266,30 +270,9 @@ function PodCaptureView({ dispatch, existingPod, onBack, onDone }: { dispatch: T
   function endDraw() { setIsDrawing(false); }
   function clearSig() { setSignaturePoints([]); }
 
-  function simulatePhoto() {
-    // Generate a synthetic "photo" as colored canvas data URL (placeholder for real camera)
-    const c = document.createElement('canvas');
-    c.width = 320; c.height = 240;
-    const ctx = c.getContext('2d')!;
-    // Sky gradient
-    const g = ctx.createLinearGradient(0,0,0,c.height);
-    g.addColorStop(0, '#93c5fd'); g.addColorStop(0.6, '#fde68a'); g.addColorStop(1, '#86efac');
-    ctx.fillStyle = g; ctx.fillRect(0,0,c.width,c.height);
-    // Truck box
-    ctx.fillStyle = '#1e40af'; ctx.fillRect(40, 90, 220, 90);
-    ctx.fillStyle = '#0f172a'; ctx.fillRect(220, 100, 35, 60);
-    ctx.fillStyle = '#1e293b';
-    ctx.beginPath(); ctx.arc(80, 185, 15, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(215, 185, 15, 0, Math.PI*2); ctx.fill();
-    // Palette boxes (cargo)
-    ctx.fillStyle = '#b45309'; ctx.fillRect(60, 100, 40, 35);
-    ctx.fillStyle = '#92400e'; ctx.fillRect(110, 100, 40, 35);
-    ctx.fillStyle = '#78350f'; ctx.fillRect(160, 100, 45, 35);
-    // Label
-    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(0,c.height-28,c.width,28);
-    ctx.fillStyle = 'white'; ctx.font = 'bold 12px sans-serif';
-    ctx.fillText(`POD ${dispatch.reference} · ${new Date().toLocaleString()}`, 8, c.height-10);
-    setPhotoTaken(c.toDataURL('image/jpeg', 0.7));
+  function handlePhoto(dataUrl: string, meta: { lat?: number; lng?: number; caption?: string }) {
+    setPhotoTaken(dataUrl);
+    setPhotoMeta(meta);
   }
 
   function submitPOD() {
@@ -306,6 +289,9 @@ function PodCaptureView({ dispatch, existingPod, onBack, onDone }: { dispatch: T
       receiverName: receiverName.trim(),
       receiverSignature: sigData,
       podPhotoDataUrl: photoTaken || undefined,
+      podPhotoLat: photoMeta?.lat,
+      podPhotoLng: photoMeta?.lng,
+      podPhotoCaption: photoMeta?.caption,
       comments: comments || undefined,
       deliveredAt: new Date().toISOString(),
       condition,
@@ -372,7 +358,10 @@ function PodCaptureView({ dispatch, existingPod, onBack, onDone }: { dispatch: T
           <div className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
             <MapPin className="w-4 h-4 text-rose-500" /> {dispatch.deliveryLocation}
           </div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">{dispatch.customerName} · {t_pieces(dispatch)} pieces · {(dispatch.weight/1000).toFixed(1)}t</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400 mb-3">{dispatch.customerName} · {t_pieces(dispatch)} pieces · {(dispatch.weight/1000).toFixed(1)}t</div>
+          <Button variant="outline" className="w-full" onClick={() => navigateToQuery(dispatch.deliveryLocation + ', Madagascar')}>
+            <Navigation className="w-4 h-4 mr-2 text-emerald-600" /> Navigate with {detectPlatform() === 'android' ? 'Google Maps / Waze' : 'Google Maps'}
+          </Button>
         </Card>
 
         {/* Step: Arrived */}
@@ -519,7 +508,6 @@ function PodCaptureView({ dispatch, existingPod, onBack, onDone }: { dispatch: T
           </Card>
         )}
 
-        {/* Step: Photo */}
         {step === 'photo' && (
           <Card className="p-5">
             <h3 className="font-bold text-slate-900 dark:text-white mb-1 flex items-center gap-2">
@@ -530,14 +518,16 @@ function PodCaptureView({ dispatch, existingPod, onBack, onDone }: { dispatch: T
             {photoTaken ? (
               <div className="mb-4">
                 <img src={photoTaken} alt="POD" className="w-full rounded-lg border border-slate-200 dark:border-slate-700" />
-                <button onClick={() => setPhotoTaken(null)} className="text-xs text-slate-500 mt-1">Retake photo</button>
+                {photoMeta?.lat && <div className="text-xs text-slate-500 mt-1">📍 {photoMeta.lat.toFixed(5)}, {photoMeta.lng?.toFixed(5)}</div>}
+                {photoMeta?.caption && <div className="text-xs text-slate-500 italic">"{photoMeta.caption}"</div>}
+                <button onClick={() => { setPhotoTaken(null); setPhotoMeta(null); setCameraOpen(true); }} className="text-xs text-brand mt-1 font-semibold">Retake photo</button>
               </div>
             ) : (
-              <button onClick={simulatePhoto}
-                className="w-full h-48 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center gap-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 mb-4">
-                <Camera className="w-10 h-10" />
-                <span className="font-semibold">Tap to take photo</span>
-                <span className="text-xs">(Demo: simulated delivery photo)</span>
+              <button onClick={() => setCameraOpen(true)}
+                className="w-full h-48 rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center gap-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 mb-4 active:scale-[0.98] transition">
+                <Camera className="w-10 h-10 text-brand" />
+                <span className="font-semibold">📸 Take delivery photo</span>
+                <span className="text-xs">Uses phone camera · geotagged · optional caption</span>
               </button>
             )}
 
@@ -552,6 +542,8 @@ function PodCaptureView({ dispatch, existingPod, onBack, onDone }: { dispatch: T
             </div>
           </Card>
         )}
+
+        <CameraCapture open={cameraOpen} onClose={() => setCameraOpen(false)} onCapture={handlePhoto} title="Delivery Photo" />
       </div>
     </PageShell>
   );
