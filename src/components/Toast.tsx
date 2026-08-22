@@ -87,7 +87,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           };
           return (
             <div key={t.id}
-              className={`pointer-events-auto rounded-xl border shadow-lg px-4 py-3 flex items-start gap-3 animate-[kbdIn_0.2s_ease-out] ${colorMap[t.variant]}`}>
+              className={`ff-toast pointer-events-auto rounded-xl border shadow-lg px-4 py-3 flex items-start gap-3 ${colorMap[t.variant]}`}>
               <div className={`shrink-0 mt-0.5 ${iconColorMap[t.variant]}`}>{iconMap[t.variant]}</div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm leading-tight">{t.title}</div>

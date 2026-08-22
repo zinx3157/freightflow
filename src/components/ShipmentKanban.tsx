@@ -76,9 +76,9 @@ export function ShipmentKanban({ onOpen }: { onOpen?: (id: string) => void }) {
           return (
             <div
               key={col.id}
-              className={`rounded-xl border-2 transition-colors min-h-[120px] ${
+              className={`ff-kanban-col rounded-xl border-2 transition-all min-h-[120px] ${
                 overCol === col.id
-                  ? 'border-brand bg-brand/5'
+                  ? 'border-brand bg-brand/5 scale-[1.01]'
                   : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/30'
               }`}
               onDragOver={(e) => {
@@ -139,7 +139,7 @@ export function ShipmentKanban({ onOpen }: { onOpen?: (id: string) => void }) {
                         setOverCol(null);
                       }}
                       onClick={() => onOpen?.(s.id)}
-                      className="group bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3 shadow-sm hover:shadow-md hover:border-brand cursor-pointer transition-all active:scale-95"
+                      className="ff-kanban-card group bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 p-3 shadow-sm"
                     >
                       <div className="flex items-start justify-between gap-2 mb-1.5">
                         <div className="flex items-center gap-1.5 min-w-0">

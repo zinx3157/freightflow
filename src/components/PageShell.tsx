@@ -17,7 +17,7 @@ export default function PageShell({
     document.title = `${title} — FreightFlow`;
   }, [title]);
   return (
-    <main className="flex-1 p-3 sm:p-6 space-y-4 sm:space-y-6 bg-slate-50 dark:bg-[#0b1220] min-h-[calc(100vh-4rem)] overflow-x-hidden">
+    <main className="flex-1 w-full p-3 sm:p-6 space-y-4 sm:space-y-6 bg-slate-50 dark:bg-[#0b1220] overflow-x-hidden ff-stagger">
       {children}
     </main>
   );

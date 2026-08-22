@@ -469,7 +469,7 @@ export function CopilotFab({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="fixed bottom-20 md:bottom-6 right-4 md:right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-600/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center group"
+      className="ff-fab fixed bottom-20 md:bottom-6 right-4 md:right-[4.5rem] z-40 w-14 h-14 rounded-full bg-gradient-to-br from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-600/30 hover:shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center group ff-pop"
       title="FreightFlow AI (press /)"
       style={{ marginBottom: 'var(--safe-bottom)' }}
     >

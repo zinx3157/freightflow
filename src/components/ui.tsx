@@ -33,7 +33,7 @@ export function Button({
 export function Card({ className, children, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm', className)}
+      className={cn('ff-card bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm', className)}
       {...props}
     >
       {children}
@@ -151,12 +151,12 @@ export function Modal({
   const sizes = { sm: 'max-w-md', md: 'max-w-xl', lg: 'max-w-3xl', xl: 'max-w-5xl' };
   return (
     <div
-      className="fixed inset-0 z-50 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm flex items-end sm:items-start sm:justify-center overflow-y-auto"
+      className="ff-modal-backdrop fixed inset-0 z-50 bg-slate-900/50 dark:bg-black/70 backdrop-blur-sm flex items-end sm:items-center sm:justify-center overflow-y-auto"
       onClick={onClose}
     >
       <div
         className={cn(
-          'bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl shadow-2xl w-full sm:my-10 max-h-[92vh] sm:max-h-[85vh] flex flex-col overflow-hidden ff-sheet-up',
+          'ff-modal-card bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-xl shadow-2xl w-full sm:my-10 max-h-[92vh] sm:max-h-[85vh] flex flex-col overflow-hidden',
           sizes[size]
         )}
         onClick={(e) => e.stopPropagation()}
@@ -165,7 +165,7 @@ export function Modal({
           <h3 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white pr-4 truncate">{title}</h3>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xl leading-none w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+            className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-xl leading-none w-10 h-10 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0 transition-transform hover:rotate-90"
             aria-label="Close"
           >
             ×

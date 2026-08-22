@@ -158,7 +158,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
           </div>
           <div>
             <div className="font-bold text-lg leading-tight tracking-tight">FreightFlow</div>
-            <div className="text-[10px] text-white/60 uppercase tracking-[0.15em]">Logistics OS · B9.2</div>
+            <div className="text-[10px] text-white/60 uppercase tracking-[0.15em]">Logistics OS · B9.3</div>
           </div>
         </Link>
         {onCloseMobile && (
@@ -192,10 +192,10 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
                       href={item.href}
                       onClick={onCloseMobile}
                       className={cn(
-                        'group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative transition-all duration-200',
+                        'ff-nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative',
                         active
                           ? 'bg-white/15 text-white shadow-sm'
-                          : 'text-white/70 hover:bg-white/10 hover:text-white hover:translate-x-0.5'
+                          : 'text-white/70 hover:bg-white/10 hover:text-white'
                       )}
                     >
                       {/* Active indicator bar */}
@@ -243,7 +243,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
               <div className="text-sm font-medium text-white truncate">{user.name}</div>
               <div className="text-[11px] text-white/60 truncate">{roleLabel(user.role)}</div>
             </div>
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px] shadow-emerald-400/50" title="Online" />
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0 shadow-[0_0_8px] shadow-emerald-400/50 ff-glow-emerald" title="Online" />
           </div>
         )}
       </div>

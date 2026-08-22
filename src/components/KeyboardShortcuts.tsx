@@ -67,7 +67,8 @@ export function ShortcutsHelp() {
       {/* Floating hint chip */}
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-40 w-10 h-10 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg hover:scale-110 transition-transform flex items-center justify-center"
+        className="ff-fab fixed bottom-20 sm:bottom-6 right-4 sm:right-4 z-40 w-10 h-10 rounded-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-lg hover:scale-110 transition-all flex items-center justify-center"
+        style={{ marginBottom: 'calc(var(--safe-bottom) + 64px)' }}
         title="Keyboard shortcuts (press ?)"
         aria-label="Keyboard shortcuts"
       >

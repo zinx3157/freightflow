@@ -46,10 +46,10 @@ export function Sparkline({
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      {fill && <path d={areaD} fill={`url(#${gid})`} />}
-      <path d={pathD} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={last[0]} cy={last[1]} r={3} fill={color} />
-      <circle cx={last[0]} cy={last[1]} r={5} fill={color} fillOpacity={0.25} />
+      {fill && <path d={areaD} fill={`url(#${gid})`} style={{ opacity: 0, animation: 'ff-route-in 0.6s 0.4s ease-out forwards' }} />}
+      <path d={pathD} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className="ff-spark-path" />
+      <circle cx={last[0]} cy={last[1]} r={3} fill={color} style={{ opacity: 0, animation: 'ff-pop 0.4s 1s ease-out forwards' }} />
+      <circle cx={last[0]} cy={last[1]} r={5} fill={color} fillOpacity={0.25} style={{ opacity: 0, animation: 'ff-pop 0.4s 1s ease-out forwards' }} />
     </svg>
   );
 }
