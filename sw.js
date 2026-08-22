@@ -2,8 +2,8 @@
  * Cache-first for static assets, network-first for HTML with offline shell fallback.
  * Scope-aware so mobile/PWA works at root and under /freightflow/ on GitHub Pages.
  */
-const CACHE = 'freightflow-b9-6-live-apis-docs-mobile-v8';
-const RUNTIME = 'freightflow-runtime-live-apis-docs-mobile-v8';
+const CACHE = 'freightflow-b9-6-live-apis-docs-mobile-v9';
+const RUNTIME = 'freightflow-runtime-live-apis-docs-mobile-v9';
 
 const scopePath = new URL(self.registration.scope).pathname.replace(/\/$/, '');
 const basePath = scopePath === '' ? '' : scopePath;
