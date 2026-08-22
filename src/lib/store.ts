@@ -138,15 +138,21 @@ function seed(): DB {
   ];
 
   const invoices: Invoice[] = [
-    { id: uid('i_'), number: 'INV-2026-0101', customerId: customers[0].id, customerName: customers[0].name, customerEmail: customers[0].email, shipmentId: shipments[0].id, items: [{ description: 'Ocean freight Toamasina-Hamburg', amount: 10500 }, { description: 'Customs clearance & docs', amount: 1800 }, { description: 'Inland trucking', amount: 1900 }], subtotal: 14200, tax: 0, total: 14200, status: 'sent', issueDate: days(-12), dueDate: days(18), currency: 'USD', sentAt: daysAgoIso(12), openedAt: hoursAgoIso(36) },
+    { id: uid('i_'), number: 'INV-2026-0101', customerId: customers[0].id, customerName: customers[0].name, customerEmail: customers[0].email, shipmentId: shipments[0].id, items: [{ description: 'Ocean freight Toamasina-Hamburg', amount: 10500 }, { description: 'Customs clearance & docs', amount: 1800 }, { description: 'Inland trucking', amount: 1900 }], subtotal: 14200, tax: 0, total: 14200, status: 'sent', issueDate: days(-45), dueDate: days(-15), currency: 'USD', sentAt: daysAgoIso(45), openedAt: hoursAgoIso(36) },
     { id: uid('i_'), number: 'INV-2026-0102', customerId: customers[3].id, customerName: customers[3].name, customerEmail: customers[3].email, shipmentId: shipments[3].id, items: [{ description: 'Air freight DXB-TNR', amount: 7800 }, { description: 'Customs duties & clearance', amount: 1250 }, { description: 'Last-mile delivery', amount: 350 }], subtotal: 9400, tax: 0, total: 9400, status: 'paid', issueDate: days(-20), dueDate: days(-5), paidDate: days(-7), currency: 'USD', sentAt: daysAgoIso(20), openedAt: daysAgoIso(19) },
     { id: uid('i_'), number: 'INV-2026-0103', customerId: customers[2].id, customerName: customers[2].name, customerEmail: customers[2].email, shipmentId: shipments[2].id, items: [{ description: 'Ocean freight Shanghai-Toamasina', amount: 18500 }, { description: 'Customs clearance (est.)', amount: 2200 }, { description: 'Inland transport to Tana', amount: 1800 }], subtotal: 22500, tax: 0, total: 22500, status: 'draft', issueDate: days(-2), dueDate: days(28), currency: 'USD' },
+    { id: uid('i_'), number: 'INV-2026-0104', customerId: customers[0].id, customerName: customers[0].name, customerEmail: customers[0].email, items: [{ description: 'Quote Q-2026-0204 acceptance — Proforma', amount: 12600 }], subtotal: 12600, tax: 0, total: 12600, status: 'sent', issueDate: days(-5), dueDate: days(25), currency: 'USD', sentAt: daysAgoIso(5), openedAt: hoursAgoIso(48) },
+    { id: uid('i_'), number: 'INV-2026-0105', customerId: customers[4].id, customerName: customers[4].name, customerEmail: customers[4].email, shipmentId: shipments[1].id, items: [{ description: 'Air freight FRA-TNR (cold chain)', amount: 8900 }, { description: 'Temperature-controlled handling', amount: 650 }, { description: 'Customs clearance', amount: 900 }], subtotal: 10450, tax: 0, total: 10450, status: 'sent', issueDate: days(-8), dueDate: days(22), currency: 'USD', sentAt: daysAgoIso(8), openedAt: daysAgoIso(7) },
   ];
 
   const quotes: Quote[] = [
-    { id: uid('q_'), number: 'Q-2026-0201', customerName: 'Global Spice Exporters', customerEmail: 'hanta@globalspice.mg', mode: 'air', direction: 'export', origin: 'Antananarivo, MG', destination: 'Tokyo, JP', weight: 350, volume: 2.0, commodity: 'Premium Vanilla', status: 'sent' as any, freightRate: 5200, customsFee: 650, truckingFee: 280, total: 6130, validUntil: days(14), createdAt: days(-2), sentAt: daysAgoIso(2), openedAt: hoursAgoIso(20) },
-    { id: uid('q_'), number: 'Q-2026-0202', customerName: 'Europe Pharma Group', customerEmail: 'h.mueller@europepharma.de', mode: 'air', direction: 'import', origin: 'Frankfurt, DE', destination: 'Antananarivo, MG', weight: 820, volume: 4.5, commodity: 'Vaccines (Cold Chain)', status: 'accepted', freightRate: 8900, customsFee: 1100, truckingFee: 450, total: 10450, validUntil: days(10), createdAt: days(-8), sentAt: daysAgoIso(8), openedAt: daysAgoIso(7) },
-    { id: uid('q_'), number: 'Q-2026-0203', customerName: 'Mada Imports SARL', customerEmail: 'jp@madaimports.mg', mode: 'sea', direction: 'import', origin: 'Istanbul, TR', destination: 'Toamasina, MG', weight: 18000, volume: 42, commodity: 'Construction Materials', status: 'pending', freightRate: 12400, customsFee: 2800, truckingFee: 1950, total: 17150, validUntil: days(21), createdAt: days(-1) },
+    { id: uid('q_'), number: 'Q-2026-0201', customerId: customers[1].id, customerName: 'Global Spice Exporters', customerEmail: 'hanta@globalspice.mg', mode: 'air', direction: 'export', origin: 'Antananarivo, MG', destination: 'Tokyo, JP', weight: 350, volume: 2.0, commodity: 'Premium Vanilla', status: 'sent' as any, freightRate: 5200, customsFee: 650, truckingFee: 280, total: 6130, validUntil: days(14), createdAt: days(-2), sentAt: daysAgoIso(2), openedAt: hoursAgoIso(20) },
+    { id: uid('q_'), number: 'Q-2026-0202', customerId: customers[4].id, customerName: 'Europe Pharma Group', customerEmail: 'h.mueller@europepharma.de', mode: 'air', direction: 'import', origin: 'Frankfurt, DE', destination: 'Antananarivo, MG', weight: 820, volume: 4.5, commodity: 'Vaccines (Cold Chain)', status: 'accepted', freightRate: 8900, customsFee: 1100, truckingFee: 450, total: 10450, validUntil: days(10), createdAt: days(-8), sentAt: daysAgoIso(8), openedAt: daysAgoIso(7) },
+    { id: uid('q_'), number: 'Q-2026-0203', customerId: customers[2].id, customerName: 'Mada Imports SARL', customerEmail: 'jp@madaimports.mg', mode: 'sea', direction: 'import', origin: 'Istanbul, TR', destination: 'Toamasina, MG', weight: 18000, volume: 42, commodity: 'Construction Materials', status: 'pending', freightRate: 12400, customsFee: 2800, truckingFee: 1950, total: 17150, validUntil: days(21), createdAt: days(-1) },
+    // One more pending quote for Indian Ocean Textiles to show in portal
+    { id: uid('q_'), number: 'Q-2026-0204', customerId: customers[0].id, customerName: 'Indian Ocean Textiles Ltd', customerEmail: 'rakoto@iotextiles.mg', mode: 'sea', direction: 'export', origin: 'Toamasina, MG', destination: 'Rotterdam, NL', weight: 14000, volume: 32, commodity: 'Cotton Textiles', status: 'sent' as any, freightRate: 9800, customsFee: 1200, truckingFee: 1600, total: 12600, validUntil: days(18), createdAt: days(-3), sentAt: daysAgoIso(3), openedAt: daysAgoIso(2) },
+    // A Mauritius Trading quote
+    { id: uid('q_'), number: 'Q-2026-0205', customerId: customers[3].id, customerName: 'Mauritius Trading Co.', customerEmail: 'priya@mauritiustrading.mu', mode: 'air', direction: 'import', origin: 'Mauritius, MU', destination: 'Antananarivo, MG', weight: 220, volume: 1.4, commodity: 'Textile Samples', status: 'pending', freightRate: 1450, customsFee: 280, truckingFee: 180, total: 1910, validUntil: days(12), createdAt: hoursAgoIso(8) },
   ] as Quote[];
 
   // Container/package manifests for existing shipments
@@ -573,9 +579,9 @@ function seed(): DB {
 
   // ---------- Batch 8: Document Approvals ----------
   const docApprovals: DocApproval[] = [
-    { id: uid('ap_'), docName: 'Original Bill of Lading — FRT-2026-0001', relatedType: 'shipment', relatedId: shipments[0].id, category: 'BL Release', requestedBy: 'Voahangy R. (Ops)', requestedAt: daysAgoIso(1), status: 'pending', reviewers: [
-      { name: 'Lina Ratsimba', role: 'Customs Mgr', status: 'pending' },
-      { name: 'Andry R.', role: 'Finance', status: 'pending' },
+    { id: uid('ap_'), docName: 'Draft Bill of Lading — FRT-2026-0001 (please confirm)', relatedType: 'shipment', relatedId: shipments[0].id, category: 'BL Draft Approval', requestedBy: 'Voahangy R. (Docs)', requestedAt: hoursAgoIso(4), status: 'pending', reviewers: [
+      { name: 'Customer (Indian Ocean Textiles)', role: 'Customer', status: 'pending' },
+      { name: 'Voahangy R.', role: 'Ops Mgr', status: 'approved', decidedAt: hoursAgoIso(3), comment: 'Docs verified internally' },
     ]},
     { id: uid('ap_'), docName: 'Phytosanitary Certificate — Spices to Rotterdam', relatedType: 'shipment', relatedId: shipments[4].id, category: 'Certificate', requestedBy: 'Hery Lalao (Sales)', requestedAt: hoursAgoIso(18), status: 'pending', reviewers: [
       { name: 'Ministry of Agriculture', role: 'External', status: 'pending' },
@@ -584,8 +590,11 @@ function seed(): DB {
     { id: uid('ap_'), docName: 'Customs Broker License Renewal', category: 'License', requestedBy: 'Admin', requestedAt: daysAgo(-90), status: 'approved', reviewers: [
       { name: 'Direction Générale des Douanes', role: 'Regulator', status: 'approved', decidedAt: daysAgo(-80), comment: 'License valid until 31/12/2026' },
     ], expiryDate: '2026-12-31' },
-    { id: uid('ap_'), docName: 'Commercial Invoice INV-2026-0103 — Mada Imports', relatedType: 'invoice', relatedId: '', category: 'Commercial Invoice', requestedBy: 'Finance', requestedAt: daysAgoIso(1), status: 'pending', reviewers: [
-      { name: 'Andry R.', role: 'Finance Mgr', status: 'pending' },
+    { id: uid('ap_'), docName: 'Invoice INV-2026-0101 — please acknowledge', relatedType: 'invoice', relatedId: invoices[0].id, category: 'Invoice Acknowledgement', requestedBy: 'Finance', requestedAt: daysAgoIso(2), status: 'pending', reviewers: [
+      { name: 'Customer (Indian Ocean Textiles)', role: 'Customer', status: 'pending' },
+    ]},
+    { id: uid('ap_'), docName: 'Certificate of Origin MG2026120 — FRT-0001', relatedType: 'shipment', relatedId: shipments[0].id, category: 'Document Acknowledgement', requestedBy: 'Docs team', requestedAt: daysAgoIso(3), status: 'approved', reviewers: [
+      { name: 'Customer (Indian Ocean Textiles)', role: 'Customer', status: 'approved', decidedAt: daysAgoIso(2), comment: 'Looks good, thanks' },
     ]},
   ];
 
@@ -1270,6 +1279,150 @@ export const db = {
     save(d); return ns;
   },
 
+  // ----- Customer Portal v2 helpers (scoped to one customer) -----
+  customerShipments: (cid: string) => load().shipments.filter(s => s.customerId === cid).sort((a,b) => b.createdAt.localeCompare(a.createdAt)),
+  customerQuotes: (cid: string) => {
+    const d = load();
+    const cust = d.customers.find(c => c.id === cid);
+    if (!cust) return [];
+    return d.quotes.filter(q => q.customerName === cust.name).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+  },
+  customerInvoices: (cid: string) => load().invoices.filter(i => i.customerId === cid).sort((a,b) => b.issueDate.localeCompare(a.issueDate)),
+  customerDocs: (cid: string) => {
+    const d = load();
+    const shipIds = new Set(d.shipments.filter(s => s.customerId === cid).map(s => s.id));
+    const invIds = new Set(d.invoices.filter(i => i.customerId === cid).map(i => i.id));
+    const quotes = d.quotes.filter(q => {
+      const cust = d.customers.find(c => c.id === cid);
+      return cust && q.customerName === cust.name;
+    });
+    const qIds = new Set(quotes.map(q => q.id));
+    return d.docs.filter(doc =>
+      (doc.relatedType === 'shipment' && doc.relatedId && shipIds.has(doc.relatedId)) ||
+      (doc.relatedType === 'invoice' && doc.relatedId && invIds.has(doc.relatedId)) ||
+      (doc.relatedType === 'quote' && doc.relatedId && qIds.has(doc.relatedId))
+    );
+  },
+  customerApprovals: (cid: string) => {
+    const d = load();
+    const shipIds = new Set(d.shipments.filter(s => s.customerId === cid).map(s => s.id));
+    const invIds = new Set(d.invoices.filter(i => i.customerId === cid).map(i => i.id));
+    return d.docApprovals.filter(a =>
+      (a.relatedType === 'shipment' && a.relatedId && shipIds.has(a.relatedId)) ||
+      (a.relatedType === 'invoice' && a.relatedId && invIds.has(a.relatedId)) ||
+      (a.relatedType === 'customer' && a.relatedId === cid)
+    ).sort((a,b) => b.requestedAt.localeCompare(a.requestedAt));
+  },
+  customerStatement: (cid: string) => {
+    const d = load();
+    const lines: { date: string; ref: string; type: 'invoice'|'payment'|'credit'|'debit'; description: string; debit: number; credit: number; balance: number; status?: string }[] = [];
+    const invs = d.invoices.filter(i => i.customerId === cid).sort((a,b) => a.issueDate.localeCompare(b.issueDate));
+    const je = d.journal.filter(j => j.customerId === cid).sort((a,b) => a.date.localeCompare(b.date));
+    let running = 0;
+    invs.forEach(i => {
+      running += i.total;
+      lines.push({ date: i.issueDate, ref: i.number, type: 'invoice', description: `Invoice ${i.number}`, debit: i.total, credit: 0, balance: running, status: i.status });
+      if (i.status === 'paid' && i.paidDate) {
+        running -= i.total;
+        lines.push({ date: i.paidDate, ref: i.number + '-PAY', type: 'payment', description: `Payment received — ${i.number}`, debit: 0, credit: i.total, balance: running, status: 'paid' });
+      }
+    });
+    je.filter(j => j.type === 'credit_note').forEach(j => {
+      running -= j.amount;
+      lines.push({ date: j.date, ref: j.reference, type: 'credit', description: j.description, debit: 0, credit: j.amount, balance: running });
+    });
+    return lines.sort((a,b) => a.date.localeCompare(b.date));
+  },
+  customerMessages: (cid: string) => {
+    const d = load();
+    const shipIds = new Set(d.shipments.filter(s => s.customerId === cid).map(s => s.id));
+    return d.portalMessages.filter(m => shipIds.has(m.shipmentId)).sort((a,b) => b.createdAt.localeCompare(a.createdAt));
+  },
+  customerTotalBalance: (cid: string) => {
+    const d = load();
+    return d.invoices.filter(i => i.customerId === cid && i.status !== 'paid' && i.status !== 'draft').reduce((s,i) => s+i.total, 0);
+  },
+  customerOverdue: (cid: string) => {
+    const d = load();
+    const today = new Date().toISOString().slice(0,10);
+    return d.invoices.filter(i => i.customerId === cid && i.status !== 'paid' && i.dueDate < today).reduce((s,i) => s+i.total, 0);
+  },
+  // Customer actions from portal
+  customerAcceptQuote: (quoteId: string) => {
+    const d = load();
+    const q = d.quotes.find(x => x.id === quoteId);
+    if (!q) return null;
+    q.status = 'accepted';
+    addActivity(d, 'quote', `Quote ${q.number} ACCEPTED by customer via portal`, q.number);
+    pushNotif(d, 'quote', `🎉 ${q.customerName} accepted quote ${q.number}`, `${q.origin} → ${q.destination} · ${q.total.toLocaleString()} ${q.currency || 'USD'}`, `/quotes/?id=${q.id}`, q.id);
+    save(d);
+    // Auto-reply forwarder message
+    d.counter.pm += 1;
+    const replyMsg: PortalMessage = { id: uid('pm_'), shipmentId: '__portal__' + q.id, from: 'forwarder', authorName: 'FreightFlow Sales', body: `Thank you for accepting quote ${q.number}! Your account manager ${q.customerEmail?.includes('pharma')?'Andry R.':'Hery Lalao'} will contact you within 2 hours during business hours to confirm booking details and issue the proforma invoice.`, createdAt: new Date().toISOString(), read: true };
+    d.portalMessages.push(replyMsg);
+    save(d);
+    return q;
+  },
+  customerRejectQuote: (quoteId: string, reason?: string) => {
+    const d = load();
+    const q = d.quotes.find(x => x.id === quoteId);
+    if (!q) return null;
+    q.status = 'rejected';
+    addActivity(d, 'quote', `Quote ${q.number} rejected by customer: ${reason || 'no reason given'}`, q.number);
+    pushNotif(d, 'quote', `❌ Quote ${q.number} declined by ${q.customerName}`, reason || 'No reason provided', `/quotes/?id=${q.id}`, q.id);
+    save(d);
+    return q;
+  },
+  customerAddMessage: (customerId: string, body: string, shipmentId?: string) => {
+    const d = load();
+    const cust = d.customers.find(c => c.id === customerId);
+    if (!cust) return null;
+    d.counter.pm += 1;
+    const sid = shipmentId || (d.shipments.find(s => s.customerId === customerId)?.id || '__general__');
+    const nm: PortalMessage = { id: uid('pm_'), shipmentId: sid, from: 'customer', authorName: cust.contactPerson || cust.name, body: body.trim(), createdAt: new Date().toISOString(), read: false };
+    d.portalMessages.push(nm);
+    pushNotif(d, 'email', `💬 New message from ${cust.name}`, body.trim().slice(0,120), `/customers/?id=${customerId}`);
+    save(d);
+    return nm;
+  },
+  customerDecideApproval: (approvalId: string, decision: 'approved'|'rejected', comment?: string) => {
+    const d = load();
+    const ap = d.docApprovals.find(x => x.id === approvalId);
+    if (!ap) return null;
+    // Add a "Customer" reviewer decision
+    const existing = ap.reviewers.find(r => r.role === 'Customer');
+    if (existing) {
+      existing.status = decision; existing.decidedAt = new Date().toISOString(); existing.comment = comment;
+    } else {
+      ap.reviewers.push({ name: 'Customer', role: 'Customer', status: decision, decidedAt: new Date().toISOString(), comment });
+    }
+    const allDone = ap.reviewers.every(r => r.status === 'approved' || r.status === 'rejected');
+    if (allDone) ap.status = ap.reviewers.some(r => r.status === 'rejected') ? 'rejected' : 'approved';
+    pushNotif(d, 'approval',
+      decision === 'approved' ? `✅ Customer approved: ${ap.docName}` : `❌ Customer rejected: ${ap.docName}`,
+      comment, `/approvals/`, ap.id);
+    addActivity(d, 'customs', `Customer ${decision} document "${ap.docName}"${comment ? ': ' + comment : ''}`, ap.docName);
+    save(d);
+    return ap;
+  },
+  customerRequestQuote: (customerId: string, req: { mode: 'air'|'sea'|'road'; direction: 'import'|'export'; origin: string; destination: string; weight: number; volume: number; pieces: number; commodity: string; incoterm?: string; readyDate?: string; notes?: string; }) => {
+    const d = load();
+    const cust = d.customers.find(c => c.id === customerId);
+    if (!cust) return null;
+    d.counter.qr += 1;
+    const qr: QuoteRequest = {
+      id: uid('qr_'), token: qrToken(),
+      customerName: cust.name, customerEmail: cust.email, customerPhone: cust.phone, company: cust.name,
+      ...req,
+      status: 'new', createdAt: new Date().toISOString(),
+    };
+    d.quoteRequests.unshift(qr);
+    addActivity(d, 'quote', `New quote request from ${cust.name} via portal: ${req.origin} → ${req.destination} (${req.commodity})`, 'Portal Request');
+    pushNotif(d, 'quote', `📨 New quote request from ${cust.name}`, `${req.origin} → ${req.destination} · ${req.commodity}`, `/quotes/`);
+    save(d);
+    return qr;
+  },
+
   // ----- Batch 8+: OOBO Madagascar e-invoice with real RSA-SHA256 signing -----
   submitOobo: async (invoiceId: string) => {
     const d = load();
@@ -1315,6 +1468,40 @@ export const db = {
 };
 
 function qrToken() { return 'qr_' + Math.random().toString(36).slice(2, 10); }
+
+/**
+ * Deterministic per-customer portal token (demo-only).
+ * In production, use signed JWTs or per-customer random UUIDs stored server-side.
+ */
+export function customerPortalToken(customerId: string): string {
+  // FNV-1a style simple hash over id + salt, base36
+  const salt = 'FreightFlow::Portal::v2::MG';
+  const str = salt + '::' + customerId;
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return 'cp_' + h.toString(36) + '_' + customerId.slice(-4);
+}
+
+/** Verify a customer portal token (constant-time-ish string compare for demo). */
+export function verifyCustomerToken(customerId: string, token: string): boolean {
+  if (!customerId || !token) return false;
+  const expected = customerPortalToken(customerId);
+  if (expected.length !== token.length) return false;
+  let diff = 0;
+  for (let i = 0; i < expected.length; i++) diff |= expected.charCodeAt(i) ^ token.charCodeAt(i);
+  return diff === 0;
+}
+
+/** Build a full customer portal URL for external sharing. */
+export function customerPortalUrl(customerId: string, baseUrl?: string): string {
+  const base = baseUrl || (typeof window !== 'undefined'
+    ? window.location.origin + (process.env.NEXT_PUBLIC_BASE_PATH || '')
+    : 'https://freightflow.mg');
+  return `${base}/portal/?c=${encodeURIComponent(customerId)}&t=${customerPortalToken(customerId)}`;
+}
 
 function unitCost(r: RateCard, weightKg: number, volCbm: number): number {
   switch (r.unit) {

@@ -415,6 +415,7 @@ export interface Invoice {
 export interface Quote {
   id: string;
   number: string;
+  customerId?: string;
   customerName: string;
   customerEmail?: string;
   mode: ShipmentMode;
@@ -424,11 +425,12 @@ export interface Quote {
   weight: number;
   volume: number;
   commodity: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'converted';
+  status: 'pending' | 'sent' | 'accepted' | 'rejected' | 'converted';
   freightRate: number;
   customsFee: number;
   truckingFee: number;
   total: number;
+  currency?: string;
   validUntil: string;
   createdAt: string;
   sentAt?: string;

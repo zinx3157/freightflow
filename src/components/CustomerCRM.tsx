@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Customer } from '@/lib/types';
 import { db } from '@/lib/store';
 import { Card, Button, Badge, Input, Textarea, Select, Field, Modal } from './ui';
-import { Phone, Mail, MapPin, Calendar, DollarSign, Package, FileText, Truck, TrendingUp, Clock, Plus, MessageSquare, PhoneCall, Users, AlertTriangle, Star } from 'lucide-react';
+import { Phone, Mail, MapPin, Calendar, DollarSign, Package, FileText, Truck, TrendingUp, Clock, Plus, MessageSquare, PhoneCall, Users, AlertTriangle, Star, Copy, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { formatDate, formatDateTime, formatMoney } from '@/lib/utils';
+import { customerPortalUrl } from '@/lib/store';
 
 type NoteType = 'note' | 'call' | 'meeting' | 'email' | 'document' | 'complaint';
 const NOTE_META: Record<NoteType, { label: string; icon: React.ReactNode; color: any }> = {
@@ -80,7 +81,21 @@ export default function CustomerCRM({ customer }: { customer: Customer }) {
               {customer.accountManager && <div className="flex items-center gap-2"><Star className="w-3.5 h-3.5 text-amber-500" />Account manager: {customer.accountManager}</div>}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            <Button variant="outline" size="sm" onClick={() => {
+              const url = customerPortalUrl(customer.id);
+              navigator.clipboard?.writeText(url);
+              const el = document.createElement('div');
+              el.textContent = 'Portal link copied ✓ Share with customer';
+              el.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-emerald-600 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-xl z-50';
+              document.body.appendChild(el);
+              setTimeout(() => el.remove(), 2200);
+            }}>
+              <Copy className="w-3.5 h-3.5" /> Copy Portal Link
+            </Button>
+            <a href={customerPortalUrl(customer.id)} target="_blank" rel="noopener noreferrer">
+              <Button variant="outline" size="sm"><ExternalLink className="w-3.5 h-3.5" /> Open Portal</Button>
+            </a>
             <Button variant="outline" size="sm"><Mail className="w-3.5 h-3.5" /> Email</Button>
             <Button size="sm" onClick={() => setAddOpen(true)}><Plus className="w-3.5 h-3.5" /> Add note</Button>
           </div>
