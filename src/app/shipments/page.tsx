@@ -445,12 +445,20 @@ function NewShipmentModal({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field label="Origin City/Country">
-            <Input value={origin} onChange={(e) => setOrigin(e.target.value)} />
-          </Field>
-          <Field label="Destination City/Country">
-            <Input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="e.g. Hamburg, DE" />
-          </Field>
+          <PortAutocomplete
+            label="Origin City/Country"
+            value={origin}
+            onChange={setOrigin}
+            placeholder="Shipper city/country"
+            allowFreeText
+          />
+          <PortAutocomplete
+            label="Destination City/Country"
+            value={destination}
+            onChange={setDestination}
+            placeholder="e.g. Hamburg, DE"
+            allowFreeText
+          />
           <PortAutocomplete
             mode={mode}
             label={mode === 'air' ? 'Airport of Departure (POL)' : 'Port of Loading (POL)'}

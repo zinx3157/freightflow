@@ -11,6 +11,7 @@ import { formatDate, formatMoney, statusColor, titleCase, daysFromNow } from '@/
 import { useRouter } from 'next/navigation';
 import { useQueryParams } from '@/lib/useQueryParams';
 import { generateQuotePDF, downloadBlob } from '@/lib/documents';
+import PortAutocomplete from '@/components/PortAutocomplete';
 
 export default function QuotesPage() {
   const [data, setData] = useState<DB | null>(null);
@@ -313,8 +314,8 @@ function NewQuoteModal({
           </Field>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Field label="Origin"><Input value={origin} onChange={(e) => setOrigin(e.target.value)} /></Field>
-          <Field label="Destination"><Input value={destination} onChange={(e) => setDestination(e.target.value)} /></Field>
+          <PortAutocomplete label="Origin" value={origin} onChange={setOrigin} mode={mode} required />
+          <PortAutocomplete label="Destination" value={destination} onChange={setDestination} mode={mode} required />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <Field label="Weight (kg)"><Input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} /></Field>

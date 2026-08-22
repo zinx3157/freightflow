@@ -9,6 +9,7 @@ import type { RateCard, RateMode, RateUnit } from '@/lib/types';
 import { Plus, Edit3, Trash2, Plane, Ship, Truck, TrendingUp, CheckCircle2, Sparkles, List } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
 import RateShopper from '@/components/RateShopper';
+import PortAutocomplete from '@/components/PortAutocomplete';
 
 const MODES: { v: RateMode; icon: React.ReactNode; label: string }[] = [
   { v: 'air', icon: <Plane className="w-4 h-4" />, label: 'Air' },
@@ -194,8 +195,8 @@ export default function RatesPage() {
               <option value="both">Both</option>
             </Select>
           </Field>
-          <Field label="Origin"><Input value={draft.origin} onChange={(e) => setDraft({ ...draft, origin: e.target.value })} placeholder="Toamasina" /></Field>
-          <Field label="Destination"><Input value={draft.destination} onChange={(e) => setDraft({ ...draft, destination: e.target.value })} placeholder="Hamburg" /></Field>
+          <PortAutocomplete label="Origin" value={draft.origin} onChange={(v) => setDraft({ ...draft, origin: v })} mode={draft.mode === 'road' ? undefined : draft.mode as 'air'|'sea'} placeholder="Origin port/city" required />
+          <PortAutocomplete label="Destination" value={draft.destination} onChange={(v) => setDraft({ ...draft, destination: v })} mode={draft.mode === 'road' ? undefined : draft.mode as 'air'|'sea'} placeholder="Destination port/city" required />
           <Field label="Pricing unit">
             <Select value={draft.unit} onChange={(e) => setDraft({ ...draft, unit: e.target.value as any })}>
               {UNITS.map((u) => <option key={u.v} value={u.v}>{u.label}</option>)}

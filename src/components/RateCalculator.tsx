@@ -5,6 +5,7 @@ import { db } from '@/lib/store';
 import { Card, Button, Badge, Input, Select, Field } from './ui';
 import { Calculator, TrendingUp, Truck, Plane, Ship, DollarSign, Clock } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
+import PortAutocomplete from './PortAutocomplete';
 
 const UNIT_LABEL: Record<string, string> = {
   kg: 'per kg',
@@ -87,12 +88,8 @@ export default function RateCalculator() {
           </Select>
         </Field>
         <div />
-        <Field label="Origin (pol)">
-          <Input value={origin} onChange={(e) => setOrigin(e.target.value)} placeholder="e.g. Toamasina, TNR, Shanghai" />
-        </Field>
-        <Field label="Destination (pod)">
-          <Input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="e.g. Hamburg, CDG, TNR" />
-        </Field>
+        <PortAutocomplete label="Origin (POL)" value={origin} onChange={setOrigin} mode={mode === 'road' ? undefined : mode} placeholder="Origin port/city" compact />
+        <PortAutocomplete label="Destination (POD)" value={destination} onChange={setDestination} mode={mode === 'road' ? undefined : mode} placeholder="Destination port/city" compact />
         <div />
         <Field label="Weight (kg)">
           <Input type="number" value={weight} onChange={(e) => setWeight(Number(e.target.value))} />

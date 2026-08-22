@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { db } from '@/lib/store';
 import { Card, Button, Input, Select, Field, Badge } from '@/components/ui';
 import { Ship, Plane, Truck, CheckCircle2, Quote, Shield, Clock, Award, Mail, Phone } from 'lucide-react';
+import PortAutocomplete from '@/components/PortAutocomplete';
 
 // Public quote request page — no auth, no sidebar. Linked from footer of tracking page.
 export default function GetQuotePage() {
@@ -142,8 +143,8 @@ export default function GetQuotePage() {
                   </Field>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-                  <Field label="Origin (city/port) *"><Input required value={form.origin} onChange={(e) => setForm({ ...form, origin: e.target.value })} placeholder="e.g. Toamasina" /></Field>
-                  <Field label="Destination (city/port) *"><Input required value={form.destination} onChange={(e) => setForm({ ...form, destination: e.target.value })} placeholder="e.g. Hamburg" /></Field>
+                  <PortAutocomplete label="Origin (city/port)" required value={form.origin} onChange={(v) => setForm({ ...form, origin: v })} mode={form.mode === 'road' ? undefined : form.mode} placeholder="e.g. Toamasina" />
+                  <PortAutocomplete label="Destination (city/port)" required value={form.destination} onChange={(v) => setForm({ ...form, destination: v })} mode={form.mode === 'road' ? undefined : form.mode} placeholder="e.g. Hamburg" />
                 </div>
                 <div className="grid grid-cols-3 gap-3 mb-3">
                   <Field label="Weight (kg)"><Input type="number" value={form.weight || ''} onChange={(e) => setForm({ ...form, weight: Number(e.target.value) })} placeholder="10000" /></Field>

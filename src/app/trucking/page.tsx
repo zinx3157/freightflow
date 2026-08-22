@@ -11,6 +11,7 @@ import { formatDate, formatDateTime, formatMoney, statusColor, titleCase } from 
 import { useRouter } from 'next/navigation';
 import { useQueryParams } from '@/lib/useQueryParams';
 import GpsTracker from '@/components/GpsTracker';
+import PortAutocomplete from '@/components/PortAutocomplete';
 
 const STATUS_LIST: TruckingStatus[] = ['scheduled', 'dispatched', 'en_route', 'loaded', 'unloaded', 'completed'];
 
@@ -458,8 +459,8 @@ function NewDispatchModal({
           <Field label="Driver Phone"><Input value={driverPhone} onChange={(e) => setDriverPhone(e.target.value)} placeholder="+261 ..." /></Field>
           <Field label="Vehicle Plate"><Input value={vehiclePlate} onChange={(e) => setVehiclePlate(e.target.value)} placeholder="1234 TAA" /></Field>
           <Field label="Weight (kg)"><Input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} /></Field>
-          <Field label="Pickup Location"><Input value={pickup} onChange={(e) => setPickup(e.target.value)} /></Field>
-          <Field label="Delivery Location"><Input value={delivery} onChange={(e) => setDelivery(e.target.value)} /></Field>
+          <PortAutocomplete label="Pickup Location" value={pickup} onChange={setPickup} placeholder="Port, warehouse or address" allowFreeText />
+          <PortAutocomplete label="Delivery Location" value={delivery} onChange={setDelivery} placeholder="Port, warehouse or address" allowFreeText />
           <Field label="Scheduled Date"><Input type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} /></Field>
           <Field label="Cost (USD)"><Input type="number" value={cost} onChange={(e) => setCost(e.target.value)} /></Field>
         </div>

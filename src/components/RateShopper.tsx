@@ -5,6 +5,7 @@ import { Card, Button, Badge, Input, Select, Field } from './ui';
 import { db } from '@/lib/store';
 import { Sparkles, Clock, TrendingDown, Award, Ship, Plane, Truck, RefreshCcw, Shield, CheckCircle2, Zap } from 'lucide-react';
 import { formatMoney, titleCase } from '@/lib/utils';
+import PortAutocomplete from './PortAutocomplete';
 
 type Quote = {
   carrier: string;
@@ -134,7 +135,7 @@ export default function RateShopper() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-4">
         <Field label="Mode">
           <Select value={mode} onChange={e => setMode(e.target.value as any)}>
             <option value="sea">Sea (FCL)</option>
@@ -142,15 +143,15 @@ export default function RateShopper() {
             <option value="road">Road (inland)</option>
           </Select>
         </Field>
-        <Field label="Origin"><Input value={origin} onChange={e => setOrigin(e.target.value)} placeholder="City/port" /></Field>
-        <Field label="Destination"><Input value={destination} onChange={e => setDestination(e.target.value)} placeholder="City/port" /></Field>
+        <PortAutocomplete label="Origin" value={origin} onChange={setOrigin} mode={mode === 'road' ? undefined : mode} placeholder="City/port" compact />
+        <PortAutocomplete label="Destination" value={destination} onChange={setDestination} mode={mode === 'road' ? undefined : mode} placeholder="City/port" compact />
         <Field label="Weight (kg)"><Input type="number" value={weight} onChange={e => setWeight(Number(e.target.value))} /></Field>
-        <Field label={mode==='sea'?'Volume (CBM)':'Volume (CBM)'}><Input type="number" value={volume} onChange={e => setVolume(Number(e.target.value))} /></Field>
+        <Field label="Volume (CBM)"><Input type="number" value={volume} onChange={e => setVolume(Number(e.target.value))} /></Field>
+        <div className="flex items-end"><Button onClick={search} disabled={loading} className="w-full">
+          {loading ? <RefreshCcw className="w-4 h-4 animate-spin"/> : <Sparkles className="w-4 h-4"/>}
+          {loading ? ' Shopping…' : ' Shop rates'}
+        </Button></div>
       </div>
-      <Button onClick={search} disabled={loading} className="w-full md:w-auto">
-        {loading ? <RefreshCcw className="w-4 h-4 animate-spin"/> : <Sparkles className="w-4 h-4"/>}
-        {loading ? ' Shopping carriers…' : ' Shop live rates'}
-      </Button>
 
       {loading && (
         <div className="mt-6 p-8 text-center">
