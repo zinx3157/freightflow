@@ -10,6 +10,7 @@ import LoginScreen from './LoginScreen';
 import MobileBottomNav from './MobileBottomNav';
 import OfflineBanner from './OfflineBanner';
 import PageTransition from './PageTransition';
+import { ShortcutsHelp } from './KeyboardShortcuts';
 import { Maximize2, Menu } from 'lucide-react';
 
 export default function CopilotWrapper({ children }: { children: React.ReactNode }) {
@@ -126,6 +127,9 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
             <kbd className="hidden sm:inline px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded font-mono text-[10px] text-slate-500">Ctrl+.</kbd>
           </button>
         )}
+
+        {/* Keyboard shortcuts help — CargoWise power-user feature */}
+        {!zen && !isDriver && <ShortcutsHelp />}
       </div>
     </div>
   );

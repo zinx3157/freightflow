@@ -7,6 +7,7 @@ import PageShell from '@/components/PageShell';
 import { Card, Button, Badge, Input, Select, Field, Modal, EmptyState } from '@/components/ui';
 import PortAutocomplete from '@/components/PortAutocomplete';
 import ChargeableWeightCalc from '@/components/ChargeableWeightCalc';
+import { ShipmentKanban } from '@/components/ShipmentKanban';
 import { db } from '@/lib/store';
 import ShipmentDetail from '@/components/ShipmentDetail';
 import type { Shipment, ShipmentMode, ShipmentDirection, ShipmentStatus } from '@/lib/types';
@@ -20,6 +21,9 @@ import {
   ArrowRight,
   Download,
   Scale,
+  LayoutGrid,
+  List,
+  Filter,
 } from 'lucide-react';
 import { formatDate, formatMoney, statusColor, titleCase, daysFromNow } from '@/lib/utils';
 
@@ -32,6 +36,7 @@ export default function ShipmentsPage() {
   const [dirFilter, setDirFilter] = useState<'all' | 'import' | 'export'>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [q, setQ] = useState('');
+  const [viewMode, setViewMode] = useState<'list' | 'kanban'>('list');
 
   // ALL hooks must run unconditionally before any early return.
   useEffect(() => {
@@ -60,13 +65,16 @@ export default function ShipmentsPage() {
   }, [data, modeFilter, dirFilter, statusFilter, q]);
 
   const counts = useMemo(() => {
-    if (!data) return { total: 0, air: 0, sea: 0, imp: 0, exp: 0 };
+    if (!data) return { total: 0, air: 0, sea: 0, imp: 0, exp: 0, byStatus: {} as Record<string, number> };
+    const byStatus: Record<string, number> = {};
+    data.shipments.forEach((s) => { byStatus[s.status] = (byStatus[s.status] || 0) + 1; });
     return {
       total: data.shipments.length,
       air: data.shipments.filter((s) => s.mode === 'air').length,
       sea: data.shipments.filter((s) => s.mode === 'sea').length,
       imp: data.shipments.filter((s) => s.direction === 'import').length,
       exp: data.shipments.filter((s) => s.direction === 'export').length,
+      byStatus,
     };
   }, [data]);
 
@@ -93,16 +101,37 @@ export default function ShipmentsPage() {
     >
       <div className="flex flex-wrap gap-2 items-center justify-between">
         <div className="flex flex-wrap gap-2 items-center">
+          {/* View toggle */}
+          <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+            <button
+              onClick={() => setViewMode('list')}
+              className={`px-2.5 py-1.5 text-sm rounded-md font-medium flex items-center gap-1.5 transition min-h-[36px] ${
+                viewMode === 'list' ? 'bg-white dark:bg-slate-900 shadow text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="List view"
+            >
+              <List className="w-4 h-4" /> List
+            </button>
+            <button
+              onClick={() => setViewMode('kanban')}
+              className={`px-2.5 py-1.5 text-sm rounded-md font-medium flex items-center gap-1.5 transition min-h-[36px] ${
+                viewMode === 'kanban' ? 'bg-white dark:bg-slate-900 shadow text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="Kanban board"
+            >
+              <LayoutGrid className="w-4 h-4" /> Board
+            </button>
+          </div>
           <div className="flex gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
             {(['all', 'air', 'sea'] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => setModeFilter(m)}
-                className={`px-3 py-1.5 text-sm rounded-md font-medium capitalize transition ${
+                className={`px-3 py-1.5 text-sm rounded-md font-medium capitalize transition min-h-[36px] ${
                   modeFilter === m ? 'bg-white dark:bg-slate-900 shadow text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                {m === 'all' ? 'All modes' : m}
+                {m === 'all' ? 'All modes' : m === 'air' ? '✈️ Air' : '🚢 Sea'}
               </button>
             ))}
           </div>
@@ -111,7 +140,7 @@ export default function ShipmentsPage() {
               <button
                 key={d}
                 onClick={() => setDirFilter(d)}
-                className={`px-3 py-1.5 text-sm rounded-md font-medium capitalize transition ${
+                className={`px-3 py-1.5 text-sm rounded-md font-medium capitalize transition min-h-[36px] ${
                   dirFilter === d ? 'bg-white dark:bg-slate-900 shadow text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -119,32 +148,73 @@ export default function ShipmentsPage() {
               </button>
             ))}
           </div>
-          <Select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-44"
-          >
-            <option value="all">All statuses</option>
-            {['quoted', 'booked', 'picked_up', 'in_transit', 'customs', 'delivered', 'cancelled'].map((s) => (
-              <option key={s} value={s}>{titleCase(s)}</option>
-            ))}
-          </Select>
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <Input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Search ref, customer, AWB/B/L…"
-              className="pl-9 w-64"
+              className="pl-9 w-56"
             />
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline"><Download className="w-4 h-4"/> Export</Button>
+          <Button variant="outline"><Download className="w-4 h-4"/> Export CSV</Button>
           <Button onClick={() => setModalOpen(true)}><Plus className="w-4 h-4" /> New Shipment</Button>
         </div>
       </div>
 
+      {/* Status filter chips — GoFreight style segmented filter with counts */}
+      <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 py-1 no-scrollbar ff-table-wrap">
+        <button
+          onClick={() => setStatusFilter('all')}
+          className={`shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors min-h-[32px] ${
+            statusFilter === 'all'
+              ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white'
+              : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-brand'
+          }`}
+        >
+          <Filter className="w-3 h-3 inline mr-1" />
+          All ({counts.total})
+        </button>
+        {(['quoted', 'booked', 'picked_up', 'in_transit', 'customs', 'delivered', 'cancelled'] as ShipmentStatus[]).map((s) => {
+          const n = counts.byStatus[s] || 0;
+          if (n === 0 && statusFilter !== s) return null;
+          const chipColor =
+            s === 'delivered' ? 'emerald' :
+            s === 'customs' ? 'amber' :
+            s === 'in_transit' ? 'blue' :
+            s === 'cancelled' ? 'rose' :
+            s === 'booked' ? 'indigo' :
+            s === 'picked_up' ? 'violet' : 'slate';
+          const active = statusFilter === s;
+          return (
+            <button
+              key={s}
+              onClick={() => setStatusFilter(s)}
+              className={`shrink-0 px-3 py-1.5 text-xs font-semibold rounded-full border transition-colors min-h-[32px] ${
+                active
+                  ? chipColor === 'emerald' ? 'bg-emerald-500 text-white border-emerald-500'
+                  : chipColor === 'amber' ? 'bg-amber-500 text-white border-amber-500'
+                  : chipColor === 'blue' ? 'bg-blue-500 text-white border-blue-500'
+                  : chipColor === 'rose' ? 'bg-rose-500 text-white border-rose-500'
+                  : chipColor === 'indigo' ? 'bg-indigo-500 text-white border-indigo-500'
+                  : chipColor === 'violet' ? 'bg-violet-500 text-white border-violet-500'
+                  : 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white'
+                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-brand'
+              }`}
+            >
+              {titleCase(s)} ({n})
+            </button>
+          );
+        })}
+      </div>
+
+      {viewMode === 'kanban' ? (
+        <Card className="p-3 sm:p-4">
+          <ShipmentKanban onOpen={(id) => router.push(`/shipments/?id=${id}`)} />
+        </Card>
+      ) : (
       <Card>
         {filtered.length === 0 ? (
           <EmptyState
@@ -236,6 +306,7 @@ export default function ShipmentsPage() {
           </div>
         )}
       </Card>
+      )}
 
       <NewShipmentModal
         open={modalOpen}

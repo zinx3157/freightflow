@@ -105,3 +105,10 @@ export function initials(name: string) {
     .join('')
     .toUpperCase();
 }
+
+export function daysBetween(a: string, b: string) {
+  const d1 = new Date(a).getTime();
+  const d2 = new Date(b).getTime();
+  if (isNaN(d1) || isNaN(d2)) return 0;
+  return Math.max(0, Math.floor(Math.abs(d2 - d1) / 86400000));
+}

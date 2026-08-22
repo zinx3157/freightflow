@@ -9,8 +9,8 @@ import BetaBanner from '@/components/BetaBanner';
 import ServiceWorkerRegister from '@/components/ServiceWorkerRegister';
 
 export const metadata: Metadata = {
-  title: 'FreightFlow — Logistics OS (Beta 9.2)',
-  description: 'Air & sea freight ops with pro AWB/FIATA B/L, POL/POD autocomplete, IATA chargeable weight, WMS, yard, POD — the CargoWise alternative. Works offline.',
+  title: 'FreightFlow — Logistics OS (Beta 9.3 Pro Ops)',
+  description: 'Air & sea freight ops with Kanban boards, Exceptions Center, Profitability BI, Carrier reliability, pro AWB/FIATA B/L, POL/POD autocomplete, IATA chargeable weight, WMS, yard, POD — the CargoWise alternative. Works offline.',
   manifest: '/manifest.json',
   appleWebApp: { capable: true, title: 'FreightFlow', statusBarStyle: 'black-translucent' },
   icons: { icon: '/favicon.ico' },
