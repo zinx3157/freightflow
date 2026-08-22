@@ -30,9 +30,7 @@ export default function ShipmentsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [q, setQ] = useState('');
 
-  const detailId = params.get('id');
-  const selected = data && detailId ? data.shipments.find((s) => s.id === detailId) || null : null;
-
+  // ALL hooks must run unconditionally before any early return.
   useEffect(() => {
     setData(db.getAll());
     if (params.get('new') === '1') setModalOpen(true);
@@ -40,11 +38,10 @@ export default function ShipmentsPage() {
     if (m === 'air' || m === 'sea') setModeFilter(m);
   }, [params]);
 
-  const refresh = () => setData(db.getAll());
-
-  if (selected) {
-    return <ShipmentDetail shipmentId={selected.id} onBack={() => router.push('/shipments/')} onChange={refresh} />;
-  }
+  // Close the new-shipment modal if user clears ?new=1 (e.g. by back-navigating)
+  useEffect(() => {
+    if (params.get('new') !== '1' && modalOpen) setModalOpen(false);
+  }, [params, modalOpen]);
 
   const filtered = useMemo(() => {
     if (!data) return [];
@@ -71,20 +68,23 @@ export default function ShipmentsPage() {
     };
   }, [data]);
 
+  // Derived values and callbacks AFTER all hooks are declared.
+  const detailId = params.get('id');
+  const selected = data && detailId ? data.shipments.find((s) => s.id === detailId) || null : null;
+  const refresh = () => setData(db.getAll());
+
   const handleCreate = (payload: Omit<Shipment, 'id' | 'createdAt' | 'reference'>) => {
     const created = db.createShipment(payload);
     setData(db.getAll());
     setModalOpen(false);
-    // Navigate to the new shipment (clears ?new=1 and opens detail)
     router.push(`/shipments/?id=${created.id}`);
   };
 
-  // Close the new-shipment modal if user clears ?new=1 (e.g. by back-navigating)
-  useEffect(() => {
-    if (params.get('new') !== '1' && modalOpen) setModalOpen(false);
-  }, [params, modalOpen]);
-
+  // Early returns ONLY after every hook has run.
   if (!data) return <PageShell title="Shipments"><div>Loading…</div></PageShell>;
+  if (selected) {
+    return <ShipmentDetail shipmentId={selected.id} onBack={() => router.push('/shipments/')} onChange={refresh} />;
+  }
 
   return (
     <PageShell

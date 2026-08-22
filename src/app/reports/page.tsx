@@ -33,6 +33,7 @@ type Tab = 'overview' | 'financial' | 'operations' | 'sustainability' | 'ledger'
 export default function ReportsPage() {
   const [data, setData] = useState<DB | null>(null);
   const [tab, setTab] = useState<Tab>('overview');
+  const [exportOpen, setExportOpen] = useState(false);
   useEffect(() => { setData(db.getAll()); }, []);
 
   const analytics = useMemo(() => {
@@ -192,7 +193,6 @@ export default function ReportsPage() {
     { label: 'Quotes (.csv)', fn: () => data && downloadCsv(`freightflow-quotes-${new Date().toISOString().slice(0,10)}`, quotesReport(data.quotes)) },
     { label: 'Yard inventory + moves (.csv)', fn: () => data && downloadCsv(`freightflow-yard-${new Date().toISOString().slice(0,10)}`, yardReport(data.yardSlots, data.yardMoves)) },
   ];
-  const [exportOpen, setExportOpen] = useState(false);
 
   return (
     <PageShell title="Reports & Business Intelligence" subtitle="Real-time analytics across your entire freight operation.">

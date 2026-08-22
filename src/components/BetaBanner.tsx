@@ -8,7 +8,7 @@ export default function BetaBanner() {
   const [zen, setZen] = useState(false);
   const [online, setOnline] = useState(true);
   useEffect(() => {
-    const v = localStorage.getItem('ff_beta_banner_hide_v9');
+    const v = localStorage.getItem('ff_beta_banner_hide_v9_1');
     if (v !== '1') setHidden(false);
     const sync = () => setZen(document.documentElement.classList.contains('ff-zen'));
     sync();
@@ -41,7 +41,7 @@ export default function BetaBanner() {
         </span>
       )}
       <button
-        onClick={() => { setHidden(true); localStorage.setItem('ff_beta_banner_hide_v9', '1'); }}
+        onClick={() => { setHidden(true); localStorage.setItem('ff_beta_banner_hide_v9_1', '1'); }}
         className="ml-1 hover:bg-white/20 rounded p-1 shrink-0"
         title="Dismiss"
       >
