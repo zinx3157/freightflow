@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
   LayoutDashboard,
@@ -142,6 +142,7 @@ interface SidebarProps {
 
 export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useAuth();
   const { lang, t } = useI18n();
   const [mounted, setMounted] = useState(false);
@@ -164,6 +165,24 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
     return () => { document.body.style.overflow = ''; };
   }, [mobileOpen]);
 
+  const isMobileDrawer = mobileOpen !== undefined;
+
+  const closeMobileDrawer = () => {
+    if (!onCloseMobile) return;
+    onCloseMobile();
+    // Ensure scroll is released immediately even before React effects run.
+    document.body.style.overflow = '';
+  };
+
+  const navigateFromMobileDrawer = (href: string, e?: React.MouseEvent) => {
+    if (!isMobileDrawer) return;
+    e?.preventDefault();
+    closeMobileDrawer();
+    // Push after the close state has been queued so the blue drawer disappears
+    // immediately on phones instead of staying over the new page.
+    setTimeout(() => router.push(href), 0);
+  };
+
   const isActive = (href: string) => {
     const base = href.split('?')[0];
     if (base === '/') return pathname === '/';
@@ -184,13 +203,13 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
   const content = (
     <>
       <div className="px-5 py-5 border-b border-white/10 dark:border-slate-800 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-3 group" onClick={onCloseMobile}>
+        <Link href="/" className="flex items-center gap-3 group" onClick={(e) => navigateFromMobileDrawer('/', e)}>
           <div className="w-10 h-10 bg-gradient-to-br from-white/20 to-white/5 backdrop-blur rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform">
             <Ship className="w-5 h-5" />
           </div>
           <div>
             <div className="font-bold text-lg leading-tight tracking-tight">FreightFlow</div>
-            <div className="text-[10px] text-white/60 uppercase tracking-[0.15em]">Logistics OS · B9.3</div>
+            <div className="text-[10px] text-white/60 uppercase tracking-[0.15em]">Logistics OS · B9.5</div>
           </div>
         </Link>
         {onCloseMobile && (
@@ -224,7 +243,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
                     <Link
                       key={item.href}
                       href={item.href}
-                      onClick={onCloseMobile}
+                      onClick={(e) => navigateFromMobileDrawer(item.href, e)}
                       className={cn(
                         'ff-nav-item group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium relative',
                         active
@@ -292,7 +311,7 @@ export default function Sidebar({ mobileOpen, onCloseMobile }: SidebarProps = {}
           onClick={onCloseMobile}
           aria-hidden="true"
         />
-        <aside className="fixed inset-y-0 left-0 z-50 w-[85%] max-w-xs bg-gradient-to-b from-brand to-brand-dark dark:from-slate-950 dark:to-slate-900 text-white flex flex-col shadow-2xl md:hidden ff-drawer-enter">
+        <aside className="fixed inset-y-0 left-0 z-50 w-[78%] max-w-[18rem] bg-gradient-to-b from-brand to-brand-dark dark:from-slate-950 dark:to-slate-900 text-white flex flex-col shadow-2xl md:hidden ff-drawer-enter">
           {content}
         </aside>
       </>
