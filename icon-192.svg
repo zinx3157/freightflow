@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f4c81"/>
+      <stop offset="1" stop-color="#1e88e5"/>
+    </linearGradient>
+  </defs>
+  <rect width="192" height="192" rx="32" fill="url(#g)"/>
+  <g fill="white" transform="translate(36,44)">
+    <!-- Ship bow -->
+    <path d="M0 70 L120 70 L110 95 L0 95 Z" fill="rgba(255,255,255,0.25)"/>
+    <!-- Hull -->
+    <path d="M0 70 L120 70 L115 85 L0 85 Z" fill="white"/>
+    <!-- Containers -->
+    <rect x="15" y="50" width="18" height="20" rx="2" fill="#ef4444"/>
+    <rect x="37" y="50" width="18" height="20" rx="2" fill="#10b981"/>
+    <rect x="59" y="50" width="18" height="20" rx="2" fill="#f59e0b"/>
+    <rect x="81" y="50" width="18" height="20" rx="2" fill="#8b5cf6"/>
+    <rect x="25" y="30" width="18" height="20" rx="2" fill="#06b6d4"/>
+    <rect x="47" y="30" width="18" height="20" rx="2" fill="#f97316"/>
+    <rect x="69" y="30" width="18" height="20" rx="2" fill="#ec4899"/>
+    <!-- Crane / mast -->
+    <rect x="10" y="10" width="4" height="40" fill="white"/>
+    <path d="M12 10 L35 25 L12 25 Z" fill="white"/>
+    <!-- Plane trail (air) -->
+    <path d="M10 15 Q60 -2 110 15" stroke="white" stroke-width="2" fill="none" stroke-dasharray="4 4" opacity="0.6"/>
+    <path d="M110 13 l-7 -3 l2 3 l-2 3 z" fill="white"/>
+    <!-- Water line -->
+    <path d="M0 90 Q30 85 60 90 T120 90" stroke="white" stroke-width="2" fill="none" opacity="0.6"/>
+  </g>
+  <text x="96" y="168" text-anchor="middle" fill="white" font-family="system-ui, sans-serif" font-size="22" font-weight="800" letter-spacing="1">FREIGHTFLOW</text>
+</svg>
