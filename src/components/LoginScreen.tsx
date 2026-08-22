@@ -35,7 +35,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 flex items-center justify-center p-4">
+    <div className="min-h-screen min-h-[100dvh] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-950 dark:via-slate-900 dark:to-indigo-950 flex items-start sm:items-center justify-center px-4 py-6 sm:p-4 overflow-y-auto">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-96 h-96 bg-brand/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl" />
@@ -68,7 +68,7 @@ export default function LoginScreen() {
         </div>
 
         {/* Login card */}
-        <Card className="md:col-span-3 p-8 shadow-2xl">
+        <Card className="md:col-span-3 p-5 sm:p-8 shadow-2xl">
           <div className="flex items-center gap-2 mb-1">
             <KeyRound className="w-5 h-5 text-brand" />
             <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Sign in to your workspace</h3>

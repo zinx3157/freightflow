@@ -33,6 +33,13 @@ export default function ServiceWorkerRegister() {
               .map((reg) => reg.unregister())
           );
         }
+
+        // Clear older FreightFlow caches from the page as well. This helps phones
+        // that kept a stale static shell even after the repo was redeployed.
+        if ('caches' in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.filter((k) => k.startsWith('freightflow-')).map((k) => caches.delete(k)));
+        }
       } catch {}
 
       navigator.serviceWorker

@@ -147,9 +147,30 @@ html.ff-zen:fullscreen, html.ff-zen:fullscreen body, html.ff-zen:-webkit-full-sc
   width: 100vw; height: 100vh; height: 100dvh;
 }
 
-/* Mobile bottom tab bar spacing */
+/* Mobile bottom tab bar spacing + phone viewport behavior */
 @media (max-width: 767px) {
-  .ff-has-bottom-nav main { padding-bottom: calc(92px + var(--safe-bottom)) !important; }
+  html, body {
+    min-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+  }
+
+  /* On phones, let the document/body scroll naturally instead of trapping the
+     whole app inside a fixed 100vh container. This fixes pages feeling "static"
+     or clipped under mobile browser address bars. */
+  .ff-app-shell {
+    min-height: 100svh;
+    min-height: 100dvh;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  .ff-app-main {
+    min-height: auto;
+    overflow-y: visible !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ff-has-bottom-nav main { padding-bottom: calc(104px + var(--safe-bottom)) !important; }
   .ff-bottom-nav { padding-bottom: var(--safe-bottom); }
 }
 

@@ -99,7 +99,7 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
   const showBottomNav = !zen && !isDriver;
 
   return (
-    <div className={`flex h-screen h-[100dvh] w-full overflow-hidden bg-slate-50 dark:bg-[#0b1220] ${showBottomNav ? 'ff-has-bottom-nav' : ''}`}>
+    <div className={`ff-app-shell flex min-h-[100dvh] md:h-screen md:h-[100dvh] w-full overflow-x-hidden md:overflow-hidden bg-slate-50 dark:bg-[#0b1220] ${showBottomNav ? 'ff-has-bottom-nav' : ''}`}>
       <PageTransition />
       {/* Desktop sidebar */}
       {!zen && <Sidebar />}
@@ -112,7 +112,7 @@ export default function CopilotWrapper({ children }: { children: React.ReactNode
         <OfflineBanner />
         <main
           key={pathname}
-          className={`flex-1 min-h-0 overflow-y-auto overflow-x-hidden ff-route-enter ${zen ? 'overflow-auto' : ''}`}
+          className={`ff-app-main flex-1 min-h-0 overflow-y-visible md:overflow-y-auto overflow-x-hidden ff-route-enter ${zen ? 'overflow-auto' : ''}`}
         >
           {children}
         </main>
